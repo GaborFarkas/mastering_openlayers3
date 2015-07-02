@@ -1,10 +1,11 @@
 function init() {
+    document.removeEventListener('DOMContentLoaded', init);
     var vectorLayer = new ol.layer.Vector({
         source: new ol.source.Vector({
             format: new ol.format.GeoJSON({
                 defaultDataProjection: 'EPSG:4326'
             }),
-            url: '../../res/ne_capitals.geojson'
+            url: '../../res/world_capitals.geojson'
         })
     })
     var map = new ol.Map({
@@ -36,3 +37,4 @@ function init() {
         })
     });
 }
+document.addEventListener('DOMContentLoaded', init);
