@@ -1,0 +1,10 @@
+.map {
+    width: 100%;
+    height: 100%;
+}
+.ol-zoom-in {
+    border-radius: 50%;
+}
+.ol-zoom-out {
+    border-radius: 50%;
+}
