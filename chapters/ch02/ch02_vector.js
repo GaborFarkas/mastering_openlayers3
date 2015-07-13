@@ -6,6 +6,21 @@ function init() {
                 defaultDataProjection: 'EPSG:4326'
             }),
             url: '../../res/world_capitals.geojson'
+        }),
+        style: new ol.style.Style({
+            image: new ol.style.RegularShape({
+                stroke: new ol.style.Stroke({
+                    width: 2,
+                    color: [6,125,34,1]
+                }),
+                fill: new ol.style.Fill({
+                    color: [25,235,75,0.3]
+                }),
+                points: 5,
+                radius1: 5,
+                radius2: 8,
+                rotation: Math.PI
+            })
         })
     })
     var map = new ol.Map({
@@ -37,7 +52,5 @@ function init() {
             zoom: 2
         })
     });
-    var geometry = new ol.geom.Point([0,0]);
-    vectorLayer.getSource().addFeature(geometry);
 }
 document.addEventListener('DOMContentLoaded', init);

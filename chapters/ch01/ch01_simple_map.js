@@ -22,6 +22,7 @@ function init() {
             new ol.control.Rotate(),
             new ol.control.Attribution(),
             //Define some new controls
+            new ol.control.ZoomSlider(),
             new ol.control.MousePosition(),
             new ol.control.ScaleLine(),
             new ol.control.OverviewMap()
