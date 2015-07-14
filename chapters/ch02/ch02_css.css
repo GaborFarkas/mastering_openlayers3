@@ -3,7 +3,7 @@ body {
 }
 .map {
     width: 100%;
-    height: 40rem; /*Fallback*/
+    height: 100%; /*Fallback*/
     height: 100vh;
 }
 .ol-control button {
