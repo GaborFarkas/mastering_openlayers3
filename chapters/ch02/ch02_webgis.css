@@ -21,11 +21,11 @@ body {
     border: 1px solid grey;
     border-spacing: 0px;
     width: 34%;
+    float: left;
     box-sizing: border-box;
 }
 .notification-bar .message-bar {
     width: 66%;
-    float: left;
 }
 .notification-bar .ol-mouse-position {
     font-family: monospace;

@@ -12,6 +12,15 @@ body {
 .ol-control button:hover {
     background-color: rgba(219,63,63,1);
 }
+.ol-scale-line {
+    background-color: rgba(219,63,63,.5);
+}
+.ol-overviewmap {
+    bottom: 2em;
+}
+.ol-mouse-position {
+    font-family: monospace;
+}
 .ol-zoom .ol-zoom-in {
     border-radius: 50%;
 }
@@ -25,15 +34,6 @@ body {
 }
 .ol-zoom:hover {
     background-color: initial;
-}
-.ol-scale-line {
-    background-color: rgba(219,63,63,.5);
-}
-.ol-overviewmap {
-    bottom: 2em;
-}
-.ol-mouse-position {
-    font-family: monospace;
 }
 .ol-zoomslider {
     top: calc(1.875em + 5px);
