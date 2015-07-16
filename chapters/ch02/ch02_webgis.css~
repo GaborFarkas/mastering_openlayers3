@@ -26,13 +26,14 @@ body {
 }
 .notification-bar .message-bar {
     width: 66%;
+    display: table-cell;
+    vertical-align: middle;
 }
 .notification-bar .ol-mouse-position {
     font-family: monospace;
     top: initial;
     right: initial;
     text-align: center;
-    line-height: 1.8em;
     width: inherit;
 }
 .toolbar {
