@@ -31,11 +31,6 @@ function init() {
                 target: 'coordinates'
             })
         ],
-        interactions: ol.interaction.defaults().extend([
-            new ol.interaction.Select({
-                layers: [vectorLayer]
-            })
-        ]),
         view: new ol.View({
             center: [0,0],
             zoom: 2

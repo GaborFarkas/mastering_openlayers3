@@ -38,7 +38,9 @@ function init() {
                 }
             }),
             new ol.control.ScaleLine(),
-            new ol.control.OverviewMap()
+            new ol.control.OverviewMap({
+                collapsible: false
+            })
         ],
         interactions: ol.interaction.defaults().extend([
             new ol.interaction.Select({
@@ -48,7 +50,11 @@ function init() {
         view: new ol.View({
             center: [0,0],
             zoom: 2
-        })
+        }),
+        logo: {
+            src: '../../res/university_of_pecs.png',
+            href: 'http://www.ttk.pte.hu/en'
+        }
     });
 }
 document.addEventListener('DOMContentLoaded', init);
