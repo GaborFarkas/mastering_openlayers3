@@ -1,0 +1,55 @@
+body {
+    margin: 0px;
+}
+.map {
+    width: 100%;
+    height: 100%; /*Fallback*/
+    height: 100vh;
+}
+.ol-control button {
+    background-color: rgba(219,63,63,.5);
+}
+.ol-control button:hover {
+    background-color: rgba(219,63,63,1);
+}
+.ol-scale-line {
+    background-color: rgba(219,63,63,.5);
+}
+.ol-overviewmap {
+    bottom: 2em;
+}
+.ol-mouse-position {
+    font-family: monospace;
+}
+.ol-zoom .ol-zoom-in {
+    border-radius: 50%;
+}
+.ol-zoom .ol-zoom-out {
+    border-radius: 50%;
+    top: 202px;
+    position: relative;
+}
+.ol-zoom {
+    background-color: initial;
+}
+.ol-zoom:hover {
+    background-color: initial;
+}
+.ol-zoomslider, .ol-touch .ol-zoomslider {
+    top: calc(1.875em + 5px);
+    left: calc(.5em + 12px);
+    width: 2px;
+}
+.ol-zoomslider-thumb {
+    background-color: rgba(219,63,63,.5);
+    left: -11px !important;
+}
+.ol-zoomslider-thumb:hover {
+    background-color: rgba(219,63,63,1);
+}
+.ol-touch .ol-zoomslider-thumb {
+    width: 22px;
+}
+.ol-touch .ol-control button {
+    font-size: 1.14em;
+}
