@@ -10,7 +10,12 @@ function init() {
             format: new ol.format.GeoJSON({
                 defaultDataProjection: 'EPSG:4326'
             }),
-            url: '../../res/world_capitals.geojson'
+            url: '../../res/world_capitals.geojson',
+            attributions: [
+                new ol.Attribution({
+                    html: 'World Capitals © Natural Earth'
+                })
+            ]
         })
     })
     var map = new ol.Map({
@@ -37,7 +42,9 @@ function init() {
                     return coord_x + ', ' + coord_y;
                 }
             }),
-            new ol.control.ScaleLine(),
+            new ol.control.ScaleLine({
+                units: 'degrees'
+            }),
             new ol.control.OverviewMap({
                 collapsible: false
             })

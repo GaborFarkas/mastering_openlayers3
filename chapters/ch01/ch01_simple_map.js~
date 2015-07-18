@@ -5,12 +5,7 @@ function init() {
             format: new ol.format.GeoJSON({
                 defaultDataProjection: 'EPSG:4326'
             }),
-            url: '../../res/world_capitals.geojson',
-            attributions: [
-                new ol.Attribution({
-                    html: 'World Capitals © Natural Earth'
-                })
-            ]
+            url: '../../res/world_capitals.geojson'
         })
     })
     var map = new ol.Map({
