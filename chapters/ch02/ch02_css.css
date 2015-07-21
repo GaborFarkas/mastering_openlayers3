@@ -21,6 +21,15 @@ body {
 .ol-mouse-position {
     font-family: monospace;
 }
+.ol-attribution ul {
+    background-image: url(../../res/university_of_pecs_transparent.png);
+    background-size: contain;
+    background-position: 50%;
+    background-repeat: no-repeat;
+}
+.ol-attribution li {
+    display: table;
+}
 .ol-zoom .ol-zoom-in {
     border-radius: 50%;
 }
