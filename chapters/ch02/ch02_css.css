@@ -39,10 +39,10 @@ body {
     position: relative;
 }
 .ol-zoom {
-    background-color: initial;
+    background-color: rgba(255,255,255,0);
 }
 .ol-zoom:hover {
-    background-color: initial;
+    background-color: rgba(255,255,255,0);
 }
 .ol-zoomslider {
     top: calc(1.875em + 5px);
