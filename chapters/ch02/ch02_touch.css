@@ -26,17 +26,17 @@ body {
 }
 .ol-zoom .ol-zoom-out {
     border-radius: 50%;
-    top: 202px;
+    top: 203px;
     position: relative;
 }
 .ol-zoom {
-    background-color: initial;
+    background-color: rgba(255,255,255,1);
 }
 .ol-zoom:hover {
-    background-color: initial;
+    background-color: rgba(255,255,255,1);
 }
 .ol-zoomslider, .ol-touch .ol-zoomslider {
-    top: calc(1.875em + 5px);
+    top: calc(1.875em + 6px);
     left: calc(.5em + 12px);
     width: 2px;
 }
