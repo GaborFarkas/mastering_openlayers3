@@ -5,7 +5,7 @@ Written by: Gábor Farkas
 
 ## Contents:
 
-- `/chapters`   HTML, CSS, and JavaScript code for the examples provided by the book. There is one .css file for each chapter, as the styles declared in the stylesheet evolves through the chapters. There is one .html, and one .js file for each example.
+- `/chapters`   HTML, CSS, and JavaScript code for the examples provided by the book. There is one .html, one .css, and one .js file for each full example. There are also partial examples, which should be linked to the appropriate full example before using.
 
 - `/img`    Thumbnail images for custom controls.
 
