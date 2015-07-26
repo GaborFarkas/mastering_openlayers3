@@ -11,6 +11,10 @@ var layerTree = function(options) {
         }
         var controlDiv = document.createElement('div');
         controlDiv.className = 'layertree-buttons';
+        var addWms = document.createElement('button');
+        addWms.className = 'addwms';
+        addWms.title = 'New WMS Layer';
+        controlDiv.appendChild(addWms);
         containerDiv.appendChild(controlDiv);
         this.layerContainer = document.createElement('div');
         this.layerContainer.className = 'layercontainer';
@@ -77,9 +81,8 @@ function init() {
             zoom: 2
         })
     });
-    var tree = new layerTree({map:map, target:'layertree'})
+    tree = new layerTree({map:map, target:'layertree'})
         .createRegistry(map.getLayers().item(0))
         .createRegistry(map.getLayers().item(1));
-    
 }
 document.addEventListener('DOMContentLoaded', init);

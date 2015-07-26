@@ -12,12 +12,6 @@ body {
     overflow: hidden;
     position: relative;
 }
-.nosupport {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
 .notification-bar {
     width: 100%;
     height: 1.5em;
@@ -90,6 +84,12 @@ body {
 }
 .layertree .layertree-buttons button:hover {
     background-color: rgba(0,0,0,1);
+}
+.layertree-buttons .addwms {
+    background-image: url(../../res/button_wms.png);
+}
+.layertree-buttons .addwfs {
+    background-image: url(../../res/button_wfs.png);
 }
 .layertree .layercontainer {
     overflow-x: hidden;
