@@ -1,8 +1,10 @@
 var layerTree = function(options) {
     'use strict';
-    if (typeof options === 'object' && options.map && options.target) {
+    if(!(this instanceof layerTree)) {
+        throw new Error('layerTree must be constructed with the new keyword.');
+    } else if (typeof options === 'object' && options.map && options.target) {
         if (!(options.map instanceof ol.Map)) {
-            throw new Error('Please provide a valid OpenLayers 3 map object.'); 
+            throw new Error('Please provide a valid OpenLayers 3 map object.');
         }
         this.map = options.map;
         var containerDiv = document.getElementById(options.target);
@@ -18,15 +20,15 @@ var layerTree = function(options) {
         var idCounter = 0;
         this.createRegistry = function(layer) {
             layer.set('id', 'layer_' + idCounter);
-            idCounter++;
-            var containerDiv = document.createElement('div');
-            containerDiv.className = 'layer ol-unselectable';
-            containerDiv.textContent = layer.get('name') || 'Unnamed Layer';
-            containerDiv.title = containerDiv.textContent;
-            containerDiv.id = layer.get('id');
-            this.layerContainer.appendChild(containerDiv);
+            idCounter += 1;
+            var layerDiv = document.createElement('div');
+            layerDiv.className = 'layer ol-unselectable';
+            layerDiv.textContent = layer.get('name') || 'Unnamed Layer';
+            layerDiv.title = layerDiv.textContent;
+            layerDiv.id = layer.get('id');
+            this.layerContainer.appendChild(layerDiv);
             return this;
-        }
+        };
         return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
@@ -34,7 +36,7 @@ var layerTree = function(options) {
 };
 
 function init() {
-    document.removeEventListener('DOMContentLoaded', init); 
+    document.removeEventListener('DOMContentLoaded', init);
     var map = new ol.Map({
         target: 'map',
         layers: [
@@ -64,7 +66,7 @@ function init() {
             }),
             //Define some new controls
             new ol.control.MousePosition({
-                coordinateFormat: function(coordinates) {
+                coordinateFormat: function (coordinates) {
                     var coord_x = coordinates[0].toFixed(3);
                     var coord_y = coordinates[1].toFixed(3);
                     return coord_x + ', ' + coord_y;
@@ -73,7 +75,7 @@ function init() {
             })
         ],
         view: new ol.View({
-            center: [0,0],
+            center: [0, 0],
             zoom: 2
         })
     });

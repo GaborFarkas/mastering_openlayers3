@@ -16,10 +16,10 @@ function init() {
             image: new ol.style.RegularShape({
                 stroke: new ol.style.Stroke({
                     width: 2,
-                    color: [6,125,34,1]
+                    color: [6, 125, 34, 1]
                 }),
                 fill: new ol.style.Fill({
-                    color: [25,235,75,0.3]
+                    color: [25, 235, 75, 0.3]
                 }),
                 points: 5,
                 radius1: 5,
@@ -27,7 +27,7 @@ function init() {
                 rotation: Math.PI
             })
         })
-    })
+    });
     var map = new ol.Map({
         target: 'map',
         layers: [
@@ -53,7 +53,7 @@ function init() {
             })
         ]),
         view: new ol.View({
-            center: [0,0],
+            center: [0, 0],
             zoom: 2
         })
     });

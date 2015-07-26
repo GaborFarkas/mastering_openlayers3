@@ -1,10 +1,10 @@
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
-    
+
     var infoLabel = document.createElement('span');
     infoLabel.className = 'info-label';
     infoLabel.textContent = 'i';
-    
+
     var vectorLayer = new ol.layer.Vector({
         source: new ol.source.Vector({
             format: new ol.format.GeoJSON({
@@ -17,7 +17,7 @@ function init() {
                 })
             ]
         })
-    })
+    });
     var map = new ol.Map({
         target: 'map',
         layers: [
@@ -36,7 +36,7 @@ function init() {
             //Define some new controls
             new ol.control.ZoomSlider(),
             new ol.control.MousePosition({
-                coordinateFormat: function(coordinates) {
+                coordinateFormat: function (coordinates) {
                     var coord_x = coordinates[0].toFixed(3);
                     var coord_y = coordinates[1].toFixed(3);
                     return coord_x + ', ' + coord_y;
@@ -55,7 +55,7 @@ function init() {
             })
         ]),
         view: new ol.View({
-            center: [0,0],
+            center: [0, 0],
             zoom: 2
         }),
         logo: {

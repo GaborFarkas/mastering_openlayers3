@@ -27,7 +27,7 @@ function init() {
             }),
             //Define some new controls
             new ol.control.MousePosition({
-                coordinateFormat: function(coordinates) {
+                coordinateFormat: function (coordinates) {
                     var coord_x = coordinates[0].toFixed(3);
                     var coord_y = coordinates[1].toFixed(3);
                     return coord_x + ', ' + coord_y;
@@ -36,7 +36,7 @@ function init() {
             })
         ],
         view: new ol.View({
-            center: [0,0],
+            center: [0, 0],
             zoom: 2
         })
     });

@@ -12,7 +12,7 @@ function init() {
                 })
             ]
         })
-    })
+    });
     var map = new ol.Map({
         target: 'map',
         layers: [
@@ -38,11 +38,11 @@ function init() {
             })
         ]),
         view: new ol.View({
-            center: [0,0],
+            center: [0, 0],
             zoom: 2
         })
     });
-    var geometry = new ol.geom.Point([0,0]);
+    var geometry = new ol.geom.Point([0, 0]);
     vectorLayer.getSource().addFeature(geometry);
 }
 document.addEventListener('DOMContentLoaded', init);
