@@ -24,7 +24,7 @@ if method == "POST":
         url = "http://www.openlayers.org"
 else:
     fs = cgi.FieldStorage()
-    url = fs.getvalue('url', "http://www.openlayers.org")
+    url = os.environ["QUERY_STRING"]
 
 try:
     host = url.split("/")[2]

@@ -87,6 +87,7 @@ body {
     position: relative;
     top: 50%;
     transform: translateY(-50%);
+    vertical-align: middle;
 }
 .layertree .layertree-buttons button:hover {
     background-color: rgba(0,0,0,1);

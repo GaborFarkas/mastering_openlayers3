@@ -26,7 +26,7 @@ var layerTree = function(options) {
             layerDiv.textContent = layer.get('name') || 'Unnamed Layer';
             layerDiv.title = layerDiv.textContent;
             layerDiv.id = layer.get('id');
-            this.layerContainer.appendChild(layerDiv);
+            this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
         return this;
@@ -79,7 +79,7 @@ function init() {
             zoom: 2
         })
     });
-    var tree = new layerTree({map:map, target:'layertree'})
+    var tree = new layerTree({map: map, target: 'layertree'})
         .createRegistry(map.getLayers().item(0))
         .createRegistry(map.getLayers().item(1));
     

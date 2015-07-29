@@ -81,6 +81,7 @@ body {
     position: relative;
     top: 50%;
     transform: translateY(-50%);
+    vertical-align: middle;
 }
 .layertree .layertree-buttons button:hover {
     background-color: rgba(0,0,0,1);
@@ -112,4 +113,29 @@ body {
   -ms-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+.toggleable {
+    position: fixed;
+    background-color: rgba(0,0,0,.5);
+    width: 100%;
+    height: 100vh;
+    top: 0;
+}
+.addlayer {
+    background-color: rgba(255,255,255,1);
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-block;
+}
+.addlayer select {
+    min-width: 11.5em;
+    max-width: 11.5em;
+}
+.buffering::after {
+	content: '*';
+}
+.error {
+	border-color: red;
 }

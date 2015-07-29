@@ -17,4 +17,4 @@ Written by: Gábor Farkas
 
 - `/README.md`    This readme file.
 
-- `/proxy.py`    Proxy file for overriding CORS restrictions. Copy it in your web server's /cgi-bin folder. Note: this proxy does not contain any security restrictions. Be sure, no one can exploit it, use it for testing purposes only, and use it on your own risk. Adapted from: https://trac.osgeo.org/openlayers/browser/trunk/openlayers/examples/proxy.cgi.
+- `/proxy.py`    Proxy file for overriding CORS restrictions. Copy it in your web server's `cgi-bin` folder. Note: this proxy does not contain any security restrictions. Be sure, no one can exploit it, use it for testing purposes only, and use it on your own risk. Adapted from: https://trac.osgeo.org/openlayers/browser/trunk/openlayers/examples/proxy.cgi.
