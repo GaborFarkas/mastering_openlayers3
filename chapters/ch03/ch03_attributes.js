@@ -16,23 +16,68 @@ var layerTree = function (options) {
         controlDiv.className = 'layertree-buttons';
         controlDiv.appendChild(this.createButton('addwms', 'Add WMS Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('addwfs', 'Add WFS Layer', 'addlayer'));
+        controlDiv.appendChild(this.createButton('addvector', 'Add Vector Layer', 'addlayer'));
+        controlDiv.appendChild(this.createButton('deletelayer', 'Remove Layer', 'deletelayer'));
         containerDiv.appendChild(controlDiv);
         this.layerContainer = document.createElement('div');
         this.layerContainer.className = 'layercontainer';
         containerDiv.appendChild(this.layerContainer);
+        this.selectedLayer = null;
+        var _this = this;
         var idCounter = 0;
         this.createRegistry = function (layer, buffer) {
             layer.set('id', 'layer_' + idCounter);
             idCounter += 1;
             var layerDiv = document.createElement('div');
             layerDiv.className = buffer ? 'layer ol-unselectable buffering' : 'layer ol-unselectable';
-            layerDiv.textContent = layer.get('name') || 'Unnamed Layer';
-            layerDiv.title = layerDiv.textContent;
+            layerDiv.title = layer.get('name') || 'Unnamed Layer';
             layerDiv.id = layer.get('id');
+            this.addSelectEvent(layerDiv);
+            var layerSpan = document.createElement('span');
+            layerSpan.textContent = layerDiv.title;
+            this.addSelectEvent(layerSpan, true);
+            layerDiv.appendChild(layerSpan);
+            layerSpan.addEventListener('dblclick', function () {
+                this.contentEditable = true;
+                layerDiv.classList.remove('ol-unselectable');
+                this.focus();
+            });
+            layerSpan.addEventListener('blur', function () {
+                this.contentEditable = false;
+                layer.set('name', this.textContent);
+                layerDiv.classList.add(' ol-unselectable');
+                layerDiv.title = this.textContent;
+            });
+            var visibleBox = document.createElement('input');
+            visibleBox.type = 'checkbox';
+            visibleBox.className = 'visible';
+            visibleBox.checked = true;
+            visibleBox.addEventListener('change', function () {
+                if (this.checked) {
+                    layer.setVisible(true);
+                } else {
+                    layer.setVisible(false);
+                }
+            });
+            this.stopPropagationOnClick(visibleBox);
+            layerDiv.appendChild(visibleBox);
+            var layerControls = document.createElement('div');
+            this.addSelectEvent(layerControls, true);
+            var opacityHandler = document.createElement('input');
+            opacityHandler.type = 'range';
+            opacityHandler.min = 0;
+            opacityHandler.max = 1;
+            opacityHandler.step = 0.1;
+            opacityHandler.value = 1;
+            opacityHandler.addEventListener('input', function () {
+                layer.setOpacity(this.value);
+            });
+            this.stopPropagationOnClick(opacityHandler);
+            layerControls.appendChild(opacityHandler);
+            layerDiv.appendChild(layerControls);
             this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
-        var _this = this;
         this.map.getLayers().on('add', function (evt) {
             if (evt.element instanceof ol.layer.Vector) {
                 _this.createRegistry(evt.element, true);
@@ -40,13 +85,55 @@ var layerTree = function (options) {
                 _this.createRegistry(evt.element);
             }
         });
+        this.map.getLayers().on('remove', function (evt) {
+            _this.removeRegistry(evt.element);
+        });
         return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
     }
 };
 
+layerTree.prototype.addSelectEvent = function (node, isChild) {
+    var _this = this;
+    node.addEventListener('click', function (evt) {
+        var targetNode = evt.target;
+        if (isChild) {
+            evt.stopPropagation();
+            targetNode = targetNode.parentNode;
+        }
+        if (_this.selectedLayer) {
+            _this.selectedLayer.classList.remove('active');
+        }
+        _this.selectedLayer = targetNode;
+        targetNode.classList.add('active');
+    });
+};
+
+layerTree.prototype.stopPropagationOnClick = function (node) {
+    node.addEventListener('click', function (evt) {
+        evt.stopPropagation();
+    });
+};
+
+layerTree.prototype.getLayerById = function (id) {
+    var layers = this.map.getLayers().getArray();
+    for (var i = 0; i < layers.length; i += 1) {
+        if (layers[i].get('id') === id) {
+            return layers[i];
+        }
+    }
+    return false;
+};
+
+layerTree.prototype.removeRegistry = function (layer) {
+    var layerDiv = document.getElementById(layer.get('id'));
+    this.layerContainer.removeChild(layerDiv);
+    return this;
+};
+
 layerTree.prototype.createButton = function (elemName, elemTitle, elemType) {
+    var _this = this;
     var buttonElem = document.createElement('button');
     buttonElem.className = elemName;
     buttonElem.title = elemTitle;
@@ -54,6 +141,18 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType) {
         case 'addlayer':
             buttonElem.addEventListener('click', function () {
                 document.getElementById(elemName).style.display = 'block';
+            });
+            return buttonElem;
+        case 'deletelayer':
+            buttonElem.addEventListener('click', function () {
+                if (_this.selectedLayer) {
+                    var layer = _this.getLayerById(_this.selectedLayer.id);
+                    console.log(layer);
+                    _this.map.removeLayer(layer);
+                    _this.messages.textContent = 'Layer removed successfully.';
+                } else {
+                    _this.messages.textContent = 'No selected layer to remove.';
+                }
             });
             return buttonElem;
         default:
@@ -198,6 +297,59 @@ layerTree.prototype.addBufferIcon = function (layer) {
     });
 };
 
+layerTree.prototype.addVectorLayer = function (form) {
+    var file = form.file.files[0];
+    var _this = this;
+    var mapProj = this.map.getView().getProjection();
+    try {
+        var fr = new FileReader();
+        var sourceFormat;
+        fr.onload = function (evt) {
+            var vectorData = evt.target.result;
+            switch (form.format.value) {
+                case 'geojson':
+                    sourceFormat = new ol.format.GeoJSON({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'topojson':
+                    sourceFormat = new ol.format.TopoJSON({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'kml':
+                    sourceFormat = new ol.format.KML({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'osm':
+                    sourceFormat = new ol.format.OSMXML({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                default:
+                    return false;
+            }
+            var source = new ol.source.Vector({
+                format: sourceFormat
+            });
+            var layer = new ol.layer.Vector({
+                source: source,
+                name: form.displayname.value,
+                strategy: ol.loadingstrategy.bbox
+            });
+            _this.addBufferIcon(layer);
+            _this.map.addLayer(layer);
+            source.addFeatures(sourceFormat.readFeatures(vectorData, {
+                featureProjection: mapProj.getCode()
+            }));
+        }
+        fr.readAsText(file);
+    } catch (error) {
+        return error;
+    }
+};
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
     var map = new ol.Map({
@@ -261,6 +413,11 @@ function init() {
     document.getElementById('addwfs_form').addEventListener('submit', function (evt) {
         evt.preventDefault();
         tree.addWfsLayer(this);
+        this.parentNode.style.display = 'none';
+    });
+    document.getElementById('addvector_form').addEventListener('submit', function (evt) {
+        evt.preventDefault();
+        tree.addVectorLayer(this);
         this.parentNode.style.display = 'none';
     });
 }

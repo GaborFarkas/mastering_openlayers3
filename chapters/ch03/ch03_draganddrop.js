@@ -16,6 +16,7 @@ var layerTree = function (options) {
         controlDiv.className = 'layertree-buttons';
         controlDiv.appendChild(this.createButton('addwms', 'Add WMS Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('addwfs', 'Add WFS Layer', 'addlayer'));
+        controlDiv.appendChild(this.createButton('addvector', 'Add Vector Layer', 'addlayer'));
         containerDiv.appendChild(controlDiv);
         this.layerContainer = document.createElement('div');
         this.layerContainer.className = 'layercontainer';
@@ -198,28 +199,85 @@ layerTree.prototype.addBufferIcon = function (layer) {
     });
 };
 
+layerTree.prototype.addVectorLayer = function (form) {
+    var file = form.file.files[0];
+    var _this = this;
+    var mapProj = this.map.getView().getProjection();
+    try {
+        var fr = new FileReader();
+        var sourceFormat;
+        fr.onload = function (evt) {
+            var vectorData = evt.target.result;
+            switch (form.format.value) {
+                case 'geojson':
+                    sourceFormat = new ol.format.GeoJSON({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'topojson':
+                    sourceFormat = new ol.format.TopoJSON({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'kml':
+                    sourceFormat = new ol.format.KML({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'osm':
+                    sourceFormat = new ol.format.OSMXML({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                default:
+                    return false;
+            }
+            var source = new ol.source.Vector({
+                format: sourceFormat
+            });
+            var layer = new ol.layer.Vector({
+                source: source,
+                name: form.displayname.value,
+                strategy: ol.loadingstrategy.bbox
+            });
+            _this.addBufferIcon(layer);
+            _this.map.addLayer(layer);
+            source.addFeatures(sourceFormat.readFeatures(vectorData, {
+                featureProjection: mapProj.getCode()
+            }));
+        }
+        fr.readAsText(file);
+    } catch (error) {
+        return error;
+    }
+};
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
+    var dragAndDrop = new ol.interaction.DragAndDrop({
+        formatConstructors: [
+            ol.format.GeoJSON,
+            ol.format.TopoJSON,
+            ol.format.KML,
+            ol.format.OSMXML
+        ]
+    });
+    dragAndDrop.on('addfeatures', function (evt) {
+        var source = new ol.source.Vector()
+        var layer = new ol.layer.Vector({
+            source: source,
+            name: 'Drag&Drop Layer'
+        });
+        tree.addBufferIcon(layer);
+        map.addLayer(layer);
+        source.addFeatures(evt.features);
+    });
     var map = new ol.Map({
         target: 'map',
         layers: [
             new ol.layer.Tile({
                 source: new ol.source.OSM(),
                 name: 'OpenStreetMap'
-            }),
-            new ol.layer.Vector({
-                source: new ol.source.Vector({
-                    format: new ol.format.GeoJSON({
-                        defaultDataProjection: 'EPSG:4326'
-                    }),
-                    url: '../../res/world_capitals.geojson',
-                    attributions: [
-                        new ol.Attribution({
-                            html: 'World Capitals © Natural Earth'
-                        })
-                    ]
-                }),
-                name: 'World Capitals'
             })
         ],
         controls: [
@@ -237,14 +295,16 @@ function init() {
                 target: 'coordinates'
             })
         ],
+        interactions: ol.interaction.defaults().extend([
+            dragAndDrop
+        ]),
         view: new ol.View({
             center: [0, 0],
             zoom: 2
         })
     });
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
-        .createRegistry(map.getLayers().item(0))
-        .createRegistry(map.getLayers().item(1));
+        .createRegistry(map.getLayers().item(0));
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);
@@ -261,6 +321,11 @@ function init() {
     document.getElementById('addwfs_form').addEventListener('submit', function (evt) {
         evt.preventDefault();
         tree.addWfsLayer(this);
+        this.parentNode.style.display = 'none';
+    });
+    document.getElementById('addvector_form').addEventListener('submit', function (evt) {
+        evt.preventDefault();
+        tree.addVectorLayer(this);
         this.parentNode.style.display = 'none';
     });
 }

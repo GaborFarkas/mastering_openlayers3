@@ -16,10 +16,14 @@ var layerTree = function (options) {
         controlDiv.className = 'layertree-buttons';
         controlDiv.appendChild(this.createButton('addwms', 'Add WMS Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('addwfs', 'Add WFS Layer', 'addlayer'));
+        controlDiv.appendChild(this.createButton('addvector', 'Add Vector Layer', 'addlayer'));
+        controlDiv.appendChild(this.createButton('deletelayer', 'Remove Layer', 'deletelayer'));
         containerDiv.appendChild(controlDiv);
         this.layerContainer = document.createElement('div');
         this.layerContainer.className = 'layercontainer';
         containerDiv.appendChild(this.layerContainer);
+        this.selectedLayer = null;
+        var _this = this;
         var idCounter = 0;
         this.createRegistry = function (layer, buffer) {
             layer.set('id', 'layer_' + idCounter);
@@ -29,10 +33,16 @@ var layerTree = function (options) {
             layerDiv.textContent = layer.get('name') || 'Unnamed Layer';
             layerDiv.title = layerDiv.textContent;
             layerDiv.id = layer.get('id');
+            layerDiv.addEventListener('click', function (evt) {
+                if (_this.selectedLayer) {
+                    _this.selectedLayer.className = _this.selectedLayer.className.replace(/(?:^|\s)(active)(?!\S)/g, '');
+                }
+                _this.selectedLayer = evt.target;
+                evt.target.className += ' active';
+            });
             this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
-        var _this = this;
         this.map.getLayers().on('add', function (evt) {
             if (evt.element instanceof ol.layer.Vector) {
                 _this.createRegistry(evt.element, true);
@@ -40,13 +50,33 @@ var layerTree = function (options) {
                 _this.createRegistry(evt.element);
             }
         });
+        this.map.getLayers().on('remove', function (evt) {
+            _this.removeRegistry(evt.element);
+        });
         return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
     }
 };
 
+layerTree.prototype.getLayerById = function (id) {
+    var layers = this.map.getLayers().getArray();
+    for (var i = 0; i < layers.length; i += 1) {
+        if (layers[i].get('id') === id) {
+            return layers[i];
+        }
+    }
+    return false;
+};
+
+layerTree.prototype.removeRegistry = function (layer) {
+    var layerDiv = document.getElementById(layer.get('id'));
+    this.layerContainer.removeChild(layerDiv);
+    return this;
+};
+
 layerTree.prototype.createButton = function (elemName, elemTitle, elemType) {
+    var _this = this;
     var buttonElem = document.createElement('button');
     buttonElem.className = elemName;
     buttonElem.title = elemTitle;
@@ -54,6 +84,18 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType) {
         case 'addlayer':
             buttonElem.addEventListener('click', function () {
                 document.getElementById(elemName).style.display = 'block';
+            });
+            return buttonElem;
+        case 'deletelayer':
+            buttonElem.addEventListener('click', function () {
+                if (_this.selectedLayer) {
+                    var layer = _this.getLayerById(_this.selectedLayer.id);
+                    console.log(layer);
+                    _this.map.removeLayer(layer);
+                    _this.messages.textContent = 'Layer removed successfully.';
+                } else {
+                    _this.messages.textContent = 'No selected layer to remove.';
+                }
             });
             return buttonElem;
         default:
@@ -198,6 +240,59 @@ layerTree.prototype.addBufferIcon = function (layer) {
     });
 };
 
+layerTree.prototype.addVectorLayer = function (form) {
+    var file = form.file.files[0];
+    var _this = this;
+    var mapProj = this.map.getView().getProjection();
+    try {
+        var fr = new FileReader();
+        var sourceFormat;
+        fr.onload = function (evt) {
+            var vectorData = evt.target.result;
+            switch (form.format.value) {
+                case 'geojson':
+                    sourceFormat = new ol.format.GeoJSON({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'topojson':
+                    sourceFormat = new ol.format.TopoJSON({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'kml':
+                    sourceFormat = new ol.format.KML({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                case 'osm':
+                    sourceFormat = new ol.format.OSMXML({
+                        defaultDataProjection: form.projection.value
+                    });
+                    break;
+                default:
+                    return false;
+            }
+            var source = new ol.source.Vector({
+                format: sourceFormat
+            });
+            var layer = new ol.layer.Vector({
+                source: source,
+                name: form.displayname.value,
+                strategy: ol.loadingstrategy.bbox
+            });
+            _this.addBufferIcon(layer);
+            _this.map.addLayer(layer);
+            source.addFeatures(sourceFormat.readFeatures(vectorData, {
+                featureProjection: mapProj.getCode()
+            }));
+        }
+        fr.readAsText(file);
+    } catch (error) {
+        return error;
+    }
+};
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
     var map = new ol.Map({
@@ -261,6 +356,11 @@ function init() {
     document.getElementById('addwfs_form').addEventListener('submit', function (evt) {
         evt.preventDefault();
         tree.addWfsLayer(this);
+        this.parentNode.style.display = 'none';
+    });
+    document.getElementById('addvector_form').addEventListener('submit', function (evt) {
+        evt.preventDefault();
+        tree.addVectorLayer(this);
         this.parentNode.style.display = 'none';
     });
 }
