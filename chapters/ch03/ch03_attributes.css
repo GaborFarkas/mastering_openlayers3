@@ -65,6 +65,36 @@ body {
     height: 2em;
     border-bottom: 1px solid grey;
 }
+.layertree .layercontainer {
+    position: relative;
+    height: calc(100% - 2em);
+    overflow-y: auto;
+}
+.layercontainer .layer {
+    position: relative;
+    border: 1px solid grey;
+    border-radius: .5em;
+    height: 2em;
+    margin: 2px 0 2px 0;
+    line-height: 2em;
+}
+.layer span:first-of-type {
+    position: absolute;
+    left: 1.5em;
+    max-width: calc(100% - 1.5em);
+    white-space: pre;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+.layertree .ol-unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 .layertree .layertree-buttons button {
     height: 2em;
     width: 2em;
@@ -92,51 +122,6 @@ body {
 .layertree-buttons .addwfs {
     background-image: url(../../res/button_wfs.png);
 }
-.layertree-buttons .addvector {
-    background-image: url(../../res/button_vector.png);
-}
-.layertree-buttons .deletelayer {
-    background-image: url(../../res/button_delete.png);
-}
-.layertree .layercontainer {
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-.layercontainer .layer {
-    border: 1px solid grey;
-    border-radius: .5em;
-    height: 2em;
-    margin: 2px 0 2px 0;
-    line-height: 2em;
-    overflow-x: hidden;
-}
-.layercontainer .layer.active {
-    border-color: orange;
-    min-height: 2em;
-    height: initial;
-}
-.layer div {
-    display: none;
-}
-.layer .visible {
-    top: .5em;
-}
-.layer span, .layer input[type="text"] {
-    position: absolute;
-    left: 1.5em;
-}
-.layer.active div {
-    display: block;
-}
-.layertree .ol-unselectable {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
 .toggleable {
     position: fixed;
     background-color: rgba(0,0,0,.5);
@@ -162,6 +147,23 @@ body {
 .error {
 	border-color: red;
 }
-.nodisplay {
+.layertree-buttons .addvector {
+    background-image: url(../../res/button_vector.png);
+}
+.layertree-buttons .deletelayer {
+    background-image: url(../../res/button_delete.png);
+}
+.layercontainer .layer.active {
+    border-color: orange;
+    min-height: 2em;
+    height: auto;
+}
+.layer div {
     display: none;
+}
+.layer.active div {
+    display: block;
+}
+.layer .visible {
+    top: .5em;
 }

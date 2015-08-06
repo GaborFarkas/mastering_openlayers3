@@ -7,7 +7,10 @@ same server as the Javascript.  This has several problems: it's less
 efficient, it might break some sites, and it's a security risk because
 people can use this proxy to browse the web and possibly do bad stuff
 with it.  It only loads pages via http and https, but it can load any
-content type. It supports GET and POST requests."""
+content type. It supports GET and POST requests.
+
+Copyright 2011 OpenLayers Contributors
+Adapted by Gábor Farkas"""
 
 import urllib2
 import cgi

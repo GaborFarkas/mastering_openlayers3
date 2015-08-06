@@ -1,11 +1,5 @@
 {
 "type": "FeatureCollection",
-
-"crs": {
-"type": "name",
-"properties": {
-"name": "urn:ogc:def:crs:OGC:1.3:CRS84"
-} },
                                                                                 
 "features": [
 { "type": "Feature", "properties": { "NAME": "Vatican City", "POP_MAX": 832, "POP_MIN": 832 }, "geometry": { "type": "Point", "coordinates": [ 12.453387, 41.903282 ] } }

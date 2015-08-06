@@ -11,6 +11,7 @@ var layerTree = function(options) {
         if (containerDiv === null || containerDiv.nodeType !== 1) {
             throw new Error('Please provide a valid element id.');
         }
+        this.messages = document.getElementById(options.messages) || document.createElement('span');
         var controlDiv = document.createElement('div');
         controlDiv.className = 'layertree-buttons';
         containerDiv.appendChild(controlDiv);
@@ -23,9 +24,11 @@ var layerTree = function(options) {
             idCounter += 1;
             var layerDiv = document.createElement('div');
             layerDiv.className = 'layer ol-unselectable';
-            layerDiv.textContent = layer.get('name') || 'Unnamed Layer';
-            layerDiv.title = layerDiv.textContent;
+            layerDiv.title = layer.get('name') || 'Unnamed Layer';
             layerDiv.id = layer.get('id');
+            var layerSpan = document.createElement('span');
+            layerSpan.textContent = layerDiv.title;
+            layerDiv.appendChild(layerSpan);
             this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
@@ -79,7 +82,7 @@ function init() {
             zoom: 2
         })
     });
-    var tree = new layerTree({map: map, target: 'layertree'})
+    var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
         .createRegistry(map.getLayers().item(0))
         .createRegistry(map.getLayers().item(1));
     

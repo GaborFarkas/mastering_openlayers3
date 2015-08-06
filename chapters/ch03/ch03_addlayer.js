@@ -26,20 +26,21 @@ var layerTree = function (options) {
             idCounter += 1;
             var layerDiv = document.createElement('div');
             layerDiv.className = buffer ? 'layer ol-unselectable buffering' : 'layer ol-unselectable';
-            layerDiv.textContent = layer.get('name') || 'Unnamed Layer';
-            layerDiv.title = layerDiv.textContent;
+            layerDiv.title = layer.get('name') || 'Unnamed Layer';
             layerDiv.id = layer.get('id');
+            var layerSpan = document.createElement('span');
+            layerSpan.textContent = layerDiv.title;
+            layerDiv.appendChild(layerSpan);
             this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
-        var _this = this;
         this.map.getLayers().on('add', function (evt) {
             if (evt.element instanceof ol.layer.Vector) {
-                _this.createRegistry(evt.element, true);
+                this.createRegistry(evt.element, true);
             } else {
-                _this.createRegistry(evt.element);
+                this.createRegistry(evt.element);
             }
-        });
+        }, this);
         return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
@@ -61,11 +62,41 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType) {
     }
 };
 
+layerTree.prototype.addBufferIcon = function (layer) {
+    layer.getSource().on('change', function (evt) {
+        var layerElem = document.getElementById(layer.get('id'));
+        switch (evt.target.getState()) {
+            case 'ready':
+                layerElem.className = layerElem.className.replace(/(?:^|\s)(error|buffering)(?!\S)/g, '');
+                break;
+            case 'error':
+                layerElem.classList.add('error');
+                break;
+            default:
+                layerElem.classList.add('buffering');
+                break;
+        }
+    });
+};
+
+layerTree.prototype.removeContent = function (element) {
+    while (element.firstChild) {
+        element.removeChild(element.firstChild);
+    }
+    return this;
+};
+
+layerTree.prototype.createOption = function (optionValue) {
+    var option = document.createElement('option');
+    option.value = optionValue;
+    option.textContent = optionValue;
+    return option;
+};
+
 layerTree.prototype.checkWmsLayer = function (form) {
     form.check.disabled = true;
     var _this = this;
-    this.removeContent(form.layer);
-    this.removeContent(form.format);
+    this.removeContent(form.layer).removeContent(form.format);
     var url = form.server.value;
     url = /^((http)|(https))(:\/\/)/.test(url) ? url : 'http://' + url;
     form.server.value = url;
@@ -100,27 +131,14 @@ layerTree.prototype.checkWmsLayer = function (form) {
             } finally {
                 form.check.disabled = false;
             }
-        } else if (request.status >= 400) {
+        } else if (request.status > 200) {
             form.check.disabled = false;
         }
     };
     url = /\?/.test(url) ? url + '&' : url + '?';
     request.open('GET', '../../../cgi-bin/proxy.py?' + url + 'REQUEST=GetCapabilities&SERVICE=WMS', true);
-    //request.open('GET', url + '?REQUEST=GetCapabilities&SERVICE=WMS', true);
+    //request.open('GET', url + 'REQUEST=GetCapabilities&SERVICE=WMS', true);
     request.send();
-};
-
-layerTree.prototype.removeContent = function (element) {
-    while (element.firstChild) {
-        element.removeChild(element.firstChild);
-    }
-};
-
-layerTree.prototype.createOption = function (optionValue) {
-    var option = document.createElement('option');
-    option.value = optionValue;
-    option.textContent = optionValue;
-    return option;
 };
 
 layerTree.prototype.addWmsLayer = function (form) {
@@ -181,23 +199,6 @@ layerTree.prototype.addWfsLayer = function (form) {
     return this;
 };
 
-layerTree.prototype.addBufferIcon = function (layer) {
-    layer.getSource().on('change', function (evt) {
-        var layerElem = document.getElementById(layer.get('id'));
-        switch (evt.target.getState()) {
-            case 'ready':
-                layerElem.className = layerElem.className.replace(/(?:^|\s)(error|buffering)(?!\S)/g, '');
-                break;
-            case 'error':
-                layerElem.className += ' error'
-                break;
-            default:
-                layerElem.className += ' buffering';
-                break;
-        }
-    });
-};
-
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
     var map = new ol.Map({
@@ -255,8 +256,8 @@ function init() {
         this.parentNode.style.display = 'none';
     });
     document.getElementById('wmsurl').addEventListener('change', function () {
-        tree.removeContent(this.form.layer);
-        tree.removeContent(this.form.format);
+        tree.removeContent(this.form.layer)
+            .removeContent(this.form.format);
     });
     document.getElementById('addwfs_form').addEventListener('submit', function (evt) {
         evt.preventDefault();
