@@ -32,9 +32,91 @@ var layerTree = function (options) {
             layerDiv.title = layer.get('name') || 'Unnamed Layer';
             layerDiv.id = layer.get('id');
             this.addSelectEvent(layerDiv);
+            var _this = this;
+            layerDiv.draggable = true;
+            layerDiv.addEventListener('dragstart', function (evt) {
+                evt.dataTransfer.effectAllowed = 'move';
+                evt.dataTransfer.setData('Text', this.id);
+            });
+            layerDiv.addEventListener('dragenter', function (evt) {
+                this.classList.add('over');
+            });
+            layerDiv.addEventListener('dragleave', function (evt) {
+                this.classList.remove('over');
+            });
+            layerDiv.addEventListener('dragover', function (evt) {
+                evt.preventDefault();
+                evt.dataTransfer.dropEffect = 'move';
+            });
+            layerDiv.addEventListener('drop', function (evt) {
+                evt.preventDefault();
+                this.classList.remove('over');
+                var sourceLayerDiv = document.getElementById(evt.dataTransfer.getData('Text'));
+                if (sourceLayerDiv !== this) {
+                    _this.layerContainer.removeChild(sourceLayerDiv);
+                    _this.layerContainer.insertBefore(sourceLayerDiv, this);
+                    var htmlArray = [].slice.call(_this.layerContainer.children);
+                    var index = htmlArray.length - htmlArray.indexOf(sourceLayerDiv) - 1;
+                    var sourceLayer = _this.getLayerById(sourceLayerDiv.id);
+                    var layers = _this.map.getLayers().getArray();
+                    layers.splice(layers.indexOf(sourceLayer), 1);
+                    layers.splice(index, 0, sourceLayer);
+                    _this.map.render();
+                }
+            });
             var layerSpan = document.createElement('span');
             layerSpan.textContent = layerDiv.title;
             layerDiv.appendChild(this.addSelectEvent(layerSpan, true));
+            layerSpan.addEventListener('dblclick', function () {
+                this.contentEditable = true;
+                layerDiv.draggable = false;
+                layerDiv.classList.remove('ol-unselectable');
+                this.focus();
+            });
+            layerSpan.addEventListener('blur', function () {
+                if (this.contentEditable) {
+                    this.contentEditable = false;
+                    layerDiv.draggable = true;
+                    layer.set('name', this.textContent);
+                    layerDiv.classList.add('ol-unselectable');
+                    layerDiv.title = this.textContent;
+                    this.scrollTo(0, 0);
+                }
+            });
+            var visibleBox = document.createElement('input');
+            visibleBox.type = 'checkbox';
+            visibleBox.className = 'visible';
+            visibleBox.checked = layer.getVisible();
+            visibleBox.addEventListener('change', function () {
+                if (this.checked) {
+                    layer.setVisible(true);
+                } else {
+                    layer.setVisible(false);
+                }
+            });
+            layerDiv.appendChild(this.stopPropagationOnEvent(visibleBox, 'click'));
+            var layerControls = document.createElement('div');
+            this.addSelectEvent(layerControls, true);
+            var opacityHandler = document.createElement('input');
+            opacityHandler.type = 'range';
+            opacityHandler.min = 0;
+            opacityHandler.max = 1;
+            opacityHandler.step = 0.1;
+            opacityHandler.value = layer.getOpacity();
+            opacityHandler.addEventListener('input', function () {
+                layer.setOpacity(this.value);
+            });
+            opacityHandler.addEventListener('change', function () {
+                layer.setOpacity(this.value);
+            });
+            opacityHandler.addEventListener('mousedown', function () {
+                layerDiv.draggable = false;
+            });
+            opacityHandler.addEventListener('mouseup', function () {
+                layerDiv.draggable = true;
+            });
+            layerControls.appendChild(this.stopPropagationOnEvent(opacityHandler, 'click'));
+            layerDiv.appendChild(layerControls);
             this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
@@ -299,6 +381,13 @@ layerTree.prototype.getLayerById = function (id) {
     return false;
 };
 
+layerTree.prototype.stopPropagationOnEvent = function (node, event) {
+    node.addEventListener(event, function (evt) {
+        evt.stopPropagation();
+    });
+    return node;
+};
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
     var map = new ol.Map({
@@ -313,14 +402,14 @@ function init() {
                     format: new ol.format.GeoJSON({
                         defaultDataProjection: 'EPSG:4326'
                     }),
-                    url: '../../res/world_capitals.geojson',
+                    url: '../../res/world_countries.geojson',
                     attributions: [
                         new ol.Attribution({
-                            html: 'World Capitals © Natural Earth'
+                            html: 'World Countries © Natural Earth'
                         })
                     ]
                 }),
-                name: 'World Capitals'
+                name: 'World Countries'
             })
         ],
         controls: [
@@ -343,9 +432,98 @@ function init() {
             zoom: 2
         })
     });
+
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
         .createRegistry(map.getLayers().item(0))
         .createRegistry(map.getLayers().item(1));
+
+    map.on('click', function (evt) {
+        var pixel = evt.pixel;
+        var coord = evt.coordinate;
+        var attributeForm = document.createElement('form');
+        attributeForm.className = 'popup';
+        this.getOverlays().clear();
+        var deletedAttributes = [];
+        var firstFeature = true;
+        function createRow (attributeName, attributeValue, isNew) {
+            var rowElem = document.createElement('div');
+            if (isNew) {
+                var nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                rowElem.appendChild(nameInput);
+            }
+            var attributeSpan = document.createElement('span');
+            attributeSpan.textContent = isNew ? ': ' : attributeName + ': ';
+            rowElem.appendChild(attributeSpan);
+            var attributeInput = document.createElement('input');
+            attributeInput.name = attributeName;
+            attributeInput.type = 'text';
+            attributeInput.value = attributeValue;
+            rowElem.appendChild(attributeInput);
+            var removeButton = document.createElement('input');
+            removeButton.type = 'button';
+            removeButton.className = 'delete';
+            removeButton.addEventListener('click', function () {
+                rowElem.parentNode.removeChild(rowElem);
+                deletedAttributes.push(attributeName);
+            });
+            rowElem.appendChild(removeButton);
+            return rowElem;
+        }
+        this.forEachFeatureAtPixel(pixel, function (feature, layer) {
+            if (firstFeature) {
+                var attributes = feature.getProperties();
+                for (var i in attributes) {
+                    if (!(typeof attributes[i] === 'object')) {
+                        attributeForm.appendChild(createRow(i, attributes[i]));
+                    }
+                }
+                if (attributeForm.children.length > 0) {
+                    var addAttribute = document.createElement('input');
+                    addAttribute.type = 'button';
+                    addAttribute.value = '+';
+                    addAttribute.addEventListener('click', function () {
+                        attributeForm.insertBefore(createRow('', '', true), this);
+                    });
+                    attributeForm.appendChild(addAttribute);
+                    var saveAttributes = document.createElement('input');
+                    saveAttributes.type = 'submit';
+                    saveAttributes.value = '';
+                    saveAttributes.className = 'save';
+                    attributeForm.addEventListener('submit', function (evt) {
+                        evt.preventDefault();
+                        var attributeList = {};
+                        var inputList = [].slice.call(this.querySelectorAll('input[type=text]'));
+                        while (inputList.length > 0 && inputList[0].name !== '') {
+                            attributeList[inputList[0].name] = inputList[0].value;
+                            inputList.splice(0,1);
+                        }
+                        for (i = 0; i < inputList.length; i += 2) {
+                            if (inputList[i].value !== '') {
+                                attributeList[inputList[i].value] = inputList[i + 1].value;
+                            }
+                        }
+                        feature.setProperties(attributeList);
+                        for (i = 0; i < deletedAttributes.length; i += 1) {
+                            feature.unset(deletedAttributes[i]);
+                        }
+                        map.getOverlays().clear();
+                    });
+                    attributeForm.appendChild(saveAttributes);
+                    this.addOverlay(new ol.Overlay({
+                        element: attributeForm,
+                        position: coord
+                    }));
+                }
+                firstFeature = false;
+            }
+        }, map, function (layerCandidate) {
+            if (this.selectedLayer !== null && layerCandidate.get('id') === this.selectedLayer.id) {
+                return true;
+            }
+            return false;
+        }, tree);
+    });
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);

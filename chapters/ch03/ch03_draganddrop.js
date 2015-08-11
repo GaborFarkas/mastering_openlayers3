@@ -188,7 +188,7 @@ layerTree.prototype.addWfsLayer = function (form) {
         }
     };
     request.open('GET', '../../../cgi-bin/proxy.py?' + url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj);
-    //request.open('GET', url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj');
+    //request.open('GET', url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj);
     request.send();
     var layer = new ol.layer.Vector({
         source: source,
@@ -230,7 +230,7 @@ layerTree.prototype.addVectorLayer = function (form) {
                 dataProjection: dataProjection,
                 featureProjection: currentProj
             }));
-        }
+        };
         fr.readAsText(file);
         var layer = new ol.layer.Vector({
             source: source,

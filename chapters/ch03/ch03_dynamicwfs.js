@@ -16,7 +16,6 @@ var layerTree = function (options) {
         controlDiv.className = 'layertree-buttons';
         controlDiv.appendChild(this.createButton('addwms', 'Add WMS Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('addwfs', 'Add WFS Layer', 'addlayer'));
-        controlDiv.appendChild(this.createButton('addvector', 'Add Vector Layer', 'addlayer'));
         containerDiv.appendChild(controlDiv);
         this.layerContainer = document.createElement('div');
         this.layerContainer.className = 'layercontainer';
@@ -71,10 +70,10 @@ layerTree.prototype.addBufferIcon = function (layer) {
                 layerElem.className = layerElem.className.replace(/(?:^|\s)(error|buffering)(?!\S)/g, '');
                 break;
             case 'error':
-                layerElem.className += ' error'
+                layerElem.classList.add('error');
                 break;
             default:
-                layerElem.className += ' buffering';
+                layerElem.classList.add('buffering');
                 break;
         }
     });
@@ -172,24 +171,27 @@ layerTree.prototype.addWfsLayer = function (form) {
     url = /^((http)|(https))(:\/\/)/.test(url) ? url : 'http://' + url;
     url = /\?/.test(url) ? url + '&' : url + '?';
     var typeName = form.layer.value;
-    var mapProj = this.map.getView().getProjection().getCode();
-    var proj = form.projection.value || mapProj;
+    var proj = form.projection.value;
     var parser = new ol.format.WFS();
     var source = new ol.source.Vector({
-        strategy: ol.loadingstrategy.bbox
-    });
-    var request = new XMLHttpRequest();
-    request.onreadystatechange = function () {
-        if (request.readyState === 4 && request.status === 200) {
-            source.addFeatures(parser.readFeatures(request.responseText, {
-                dataProjection: proj,
-                featureProjection: mapProj
-            }));
+        strategy: ol.loadingstrategy.bbox,
+        loader: function (extent, res, mapProj) {
+            var _this = this;
+            proj = proj || mapProj.getCode();
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function () {
+                if (request.readyState === 4 && request.status === 200) {
+                    _this.addFeatures(parser.readFeatures(request.responseText, {
+                        dataProjection: proj,
+                        featureProjection: mapProj
+                    }));
+                }
+            };
+            request.open('GET', '../../../cgi-bin/proxy.py?' + url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj + '&BBOX=' + extent.join(','));
+            //request.open('GET', url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj + '&BBOX=' + extent.join(','));
+            request.send();
         }
-    };
-    request.open('GET', '../../../cgi-bin/proxy.py?' + url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj);
-    //request.open('GET', url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj);
-    request.send();
+    });       
     var layer = new ol.layer.Vector({
         source: source,
         name: form.displayname.value
@@ -197,48 +199,6 @@ layerTree.prototype.addWfsLayer = function (form) {
     this.addBufferIcon(layer);
     this.map.addLayer(layer);
     this.messages.textContent = 'WFS layer added successfully.';
-    return this;
-};
-
-layerTree.prototype.addVectorLayer = function (form) {
-    var file = form.file.files[0];
-    var currentProj = this.map.getView().getProjection();
-    var fr = new FileReader();
-    var sourceFormat;
-    var source = new ol.source.Vector();
-    fr.onload = function (evt) {
-        var vectorData = evt.target.result;
-        switch (form.format.value) {
-            case 'geojson':
-                sourceFormat = new ol.format.GeoJSON();
-                break;
-            case 'topojson':
-                sourceFormat = new ol.format.TopoJSON();
-                break;
-            case 'kml':
-                sourceFormat = new ol.format.KML();
-                break;
-            case 'osm':
-                sourceFormat = new ol.format.OSMXML();
-                break;
-            default:
-                return false;
-        }
-        var dataProjection = form.projection.value || sourceFormat.readProjection(vectorData) || currentProj;
-        source.addFeatures(sourceFormat.readFeatures(vectorData, {
-            dataProjection: dataProjection,
-            featureProjection: currentProj
-        }));
-    };
-    fr.readAsText(file);
-    var layer = new ol.layer.Vector({
-        source: source,
-        name: form.displayname.value,
-        strategy: ol.loadingstrategy.bbox
-    });
-    this.addBufferIcon(layer);
-    this.map.addLayer(layer);
-    this.messages.textContent = 'Vector layer added successfully.';
     return this;
 };
 
@@ -305,11 +265,6 @@ function init() {
     document.getElementById('addwfs_form').addEventListener('submit', function (evt) {
         evt.preventDefault();
         tree.addWfsLayer(this);
-        this.parentNode.style.display = 'none';
-    });
-    document.getElementById('addvector_form').addEventListener('submit', function (evt) {
-        evt.preventDefault();
-        tree.addVectorLayer(this);
         this.parentNode.style.display = 'none';
     });
 }
