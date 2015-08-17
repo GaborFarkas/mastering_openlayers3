@@ -400,6 +400,7 @@ ol.layer.Vector.prototype.buildHeaders = function () {
         }
     }
     this.set('headers', headers);
+    this.dispatchEvent('change:headers');
     return this;
 };
 
@@ -417,12 +418,7 @@ function init() {
                     format: new ol.format.GeoJSON({
                         defaultDataProjection: 'EPSG:4326'
                     }),
-                    url: '../../res/world_countries.geojson',
-                    attributions: [
-                        new ol.Attribution({
-                            html: 'World Countries © Natural Earth'
-                        })
-                    ]
+                    url: '../../res/world_countries.geojson'
                 }),
                 name: 'World Countries',
                 headers: {
@@ -476,7 +472,11 @@ function init() {
             rowElem.appendChild(attributeSpan);
             var attributeInput = document.createElement('input');
             attributeInput.name = attributeName;
-            attributeInput.type = type === 'string' ? 'text' : 'number';
+            attributeInput.type = 'text';
+            if (type !== 'string') {
+                attributeInput.type = 'number';
+                attributeInput.step = (type === 'float') ? 1e-6 : 1;
+            }
             attributeInput.value = attributeValue;
             rowElem.appendChild(attributeInput);
             return rowElem;
@@ -486,7 +486,7 @@ function init() {
                 var attributes = feature.getProperties();
                 var headers = layer.get('headers');
                 for (var i in attributes) {
-                    if (!(typeof attributes[i] === 'object') && i in headers) {
+                    if (typeof attributes[i] !== 'object' && i in headers) {
                         attributeForm.appendChild(createRow(i, attributes[i], headers[i]));
                     }
                 }
@@ -511,7 +511,6 @@ function init() {
                                     attributeList[inputList[i].name] = parseFloat(inputList[i].value);
                                     break;
                             }
-                            
                         }
                         feature.setProperties(attributeList);
                         map.getOverlays().clear();
@@ -521,8 +520,8 @@ function init() {
                         element: attributeForm,
                         position: coord
                     }));
+                    firstFeature = false;
                 }
-                firstFeature = false;
             }
         }, map, function (layerCandidate) {
             if (this.selectedLayer !== null && layerCandidate.get('id') === this.selectedLayer.id) {

@@ -177,7 +177,7 @@ body {
 }
 .popup span {
     display: inline-block;
-    min-width: 5%;
+    width: 5%;
 }
 .popup span:first-child {
     float: left;

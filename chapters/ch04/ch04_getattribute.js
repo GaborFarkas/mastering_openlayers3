@@ -402,12 +402,7 @@ function init() {
                     format: new ol.format.GeoJSON({
                         defaultDataProjection: 'EPSG:4326'
                     }),
-                    url: '../../res/world_countries.geojson',
-                    attributions: [
-                        new ol.Attribution({
-                            html: 'World Countries © Natural Earth'
-                        })
-                    ]
+                    url: '../../res/world_countries.geojson'
                 }),
                 name: 'World Countries'
             })
@@ -446,7 +441,7 @@ function init() {
         this.forEachFeatureAtPixel(pixel, function (feature, layer) {
             var attributes = feature.getProperties();
             for (var i in attributes) {
-                if (!(typeof attributes[i] === 'object')) {
+                if (typeof attributes[i] !== 'object') {
                     var attributeSpan = document.createElement('span');
                     attributeSpan.textContent = i + ': ' + attributes[i];
                     attributeDiv.appendChild(attributeSpan);
