@@ -62,6 +62,7 @@ var layerTree = function (options) {
                     layers.splice(layers.indexOf(sourceLayer), 1);
                     layers.splice(index, 0, sourceLayer);
                     _this.map.render();
+                    _this.map.getLayers().changed();
                 }
             });
             var layerSpan = document.createElement('span');
@@ -521,6 +522,166 @@ layerTree.prototype.randomHexColor = function() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16);
 };
 
+var toolBar = function (options) {
+    'use strict';
+    if (!(this instanceof toolBar)) {
+        throw new Error('toolBar must be constructed with the new keyword.');
+    } else if (typeof options === 'object' && options.map && options.target && options.layertree) {
+        if (!(options.map instanceof ol.Map)) {
+            throw new Error('Please provide a valid OpenLayers 3 map object.');
+        }
+        this.map = options.map;
+        this.toolbar = document.getElementById(options.target);
+        this.layertree = options.layertree;
+        this.controls = new ol.Collection();
+        return this;
+    } else {
+        throw new Error('Invalid parameter(s) provided.');
+    }
+};
+
+toolBar.prototype.addControl = function (control) {
+    if (!(control instanceof ol.control.Control)) {
+        throw new Error('Only controls can be added to the toolbar.');
+    }
+    if (control.get('type') === 'toggle') {
+        control.on('change:active', function () {
+            if (control.get('active')) {
+                this.controls.forEach(function (controlToDisable) {
+                    if (controlToDisable.get('type') === 'toggle' && controlToDisable !== control) {
+                        controlToDisable.set('active', false);
+                    }
+                });
+            }
+        }, this);
+    }
+    control.setTarget(this.toolbar);
+    this.controls.push(control);
+    this.map.addControl(control);
+    return this;
+};
+
+toolBar.prototype.removeControl = function (control) {
+    this.controls.remove(control);
+    this.map.removeControl(control);
+    return this;
+};
+
+ol.control.Interaction = function (opt_options) {
+    var options = opt_options || {};
+    var controlDiv = document.createElement('div');
+    controlDiv.className = options.className || 'ol-unselectable ol-control';
+    var controlButton = document.createElement('button');
+    controlButton.textContent = options.label || 'I';
+    controlButton.title = options.tipLabel || 'Custom interaction';
+    controlDiv.appendChild(controlButton);
+    var _this = this;
+    controlButton.addEventListener('click', function () {
+        if (_this.get('interaction').getActive()) {
+            _this.set('active', false);
+        } else {
+            _this.set('active', true);
+        }
+    });
+    var interaction = options.interaction;
+    ol.control.Control.call(this, {
+        element: controlDiv,
+        target: options.target
+    });
+    this.setProperties({
+        interaction: interaction,
+        active: false,
+        type: 'toggle',
+        destroyFunction: function (evt) {
+            if (evt.element === _this) {
+                this.removeInteraction(_this.get('interaction'));
+            }
+        }
+    });
+    this.on('change:active', function () {
+        this.get('interaction').setActive(this.get('active'));
+        if (this.get('active')) {
+            controlButton.classList.add('active');
+        } else {
+            controlButton.classList.remove('active');
+        }
+    }, this);
+};
+ol.inherits(ol.control.Interaction, ol.control.Control);
+
+ol.control.Interaction.prototype.setMap = function (map) {
+    ol.control.Control.prototype.setMap.call(this, map);
+    var interaction = this.get('interaction');
+    if (map === null) {
+        ol.Observable.unByKey(this.get('eventId'));
+    } else if (map.getInteractions().getArray().indexOf(interaction) === -1) {
+        map.addInteraction(interaction);
+        interaction.setActive(false);
+        this.set('eventId', map.getControls().on('remove', this.get('destroyFunction'), map));
+    }
+};
+
+toolBar.prototype.addSelectControls = function () {
+    var layertree = this.layertree;
+    var selectInteraction = new ol.interaction.Select({
+        layers: function (layer) {
+            if (layertree.selectedLayer) {
+                if (layer === layertree.getLayerById(layertree.selectedLayer.id)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    });
+    var selectSingle = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Select feature',
+        className: 'ol-singleselect ol-unselectable ol-control',
+        interaction: selectInteraction
+    });
+    var boxInteraction = new ol.interaction.DragBox({
+        style: new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: '#000000',
+                width: 2
+            })
+        })
+    });
+    var selectMulti = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Select features with a box',
+        className: 'ol-multiselect ol-unselectable ol-control',
+        interaction: boxInteraction
+    });
+    boxInteraction.on('boxend', function (evt) {
+        selectInteraction.getFeatures().clear();
+        var extent = boxInteraction.getGeometry().getExtent();
+        if (this.layertree.selectedLayer) {
+            var source = this.layertree.getLayerById(this.layertree.selectedLayer.id).getSource();
+            if (source instanceof ol.source.Vector) {
+                source.forEachFeatureIntersectingExtent(extent, function (feature) {
+                    selectInteraction.getFeatures().push(feature);
+                });
+            }
+        }
+    }, this);
+    var controlDiv = document.createElement('div');
+    controlDiv.className = 'ol-deselect ol-unselectable ol-control';
+    var controlButton = document.createElement('button');
+    controlButton.title = 'Remove selection(s)';
+    controlDiv.appendChild(controlButton);
+    controlButton.addEventListener('click', function () {
+        selectInteraction.getFeatures().clear();
+    });
+    var deselectControl = new ol.control.Control({
+        element: controlDiv
+    });
+    this.addControl(selectSingle)
+        .addControl(selectMulti)
+        .addControl(deselectControl);
+    return this;
+};
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
     map = new ol.Map({
@@ -545,11 +706,6 @@ function init() {
             })
         ],
         controls: [
-            //Define the default controls
-            new ol.control.Zoom({
-                target: 'toolbar'
-            }),
-            //Define some new controls
             new ol.control.MousePosition({
                 coordinateFormat: function (coordinates) {
                     var coord_x = coordinates[0].toFixed(3);
@@ -572,113 +728,14 @@ function init() {
     map.getLayers().item(1).getSource().on('change', function (evt) {
         if (this.getState() === 'ready') {
             map.getLayers().item(1).buildHeaders();
-            var geoJSONParser = new ol.format.GeoJSON();
-            var featString = geoJSONParser.writeFeatures(this.getFeatures());
-            var request = new XMLHttpRequest();
-            request.open('POST', 'myserver/myscript');
-            request.send(featString);
-            
-            var modifiedFeatures = [];
-            var features = this.getFeatures();
-            for (var i = 0; i < features.length; i += 1) {
-                var modifiedFeature = features[i].clone();
-                modifiedFeature.getGeometry().applyTransform(function (flatCoordinates, flatCoordinates2, stride) {
-                        for (var j = 0; j < flatCoordinates.length; j += stride) {
-                        var y = flatCoordinates[j];
-                        var x = flatCoordinates[j + 1];
-                        flatCoordinates[j] = x;
-                        flatCoordinates[j + 1] = y;
-                    }
-                });
-                modifiedFeatures.push(modifiedFeature);
-            }
-            var WFSTParser = new ol.format.WFS();
-            var featObject = WFSTParser.writeTransaction(null, modifiedFeatures, null, {
-                featureType: 'ne:countries',
-                featureNS: 'http://naturalearthdata.com',
-                srsName: 'EPSG:4326'
-            });
-            var serializer = new XMLSerializer();
-            var featString = serializer.serializeToString(featObject);
-            var request = new XMLHttpRequest();
-            request.open('POST', 'myowsserver?SERVICE=WFS');
-            request.setRequestHeader('Content-Type', 'text/xml');
-            request.send(featString);
         }
     });
-
-    map.on('click', function (evt) {
-        var pixel = evt.pixel;
-        var coord = evt.coordinate;
-        var attributeForm = document.createElement('form');
-        attributeForm.className = 'popup';
-        this.getOverlays().clear();
-        var firstFeature = true;
-        function createRow (attributeName, attributeValue, type) {
-            var rowElem = document.createElement('div');
-            var attributeSpan = document.createElement('span');
-            attributeSpan.textContent = attributeName + ': ';
-            rowElem.appendChild(attributeSpan);
-            var attributeInput = document.createElement('input');
-            attributeInput.name = attributeName;
-            attributeInput.type = 'text';
-            if (type !== 'string') {
-                attributeInput.type = 'number';
-                attributeInput.step = (type === 'float') ? 1e-6 : 1;
-            }
-            attributeInput.value = attributeValue;
-            rowElem.appendChild(attributeInput);
-            return rowElem;
-        }
-        this.forEachFeatureAtPixel(pixel, function (feature, layer) {
-            if (firstFeature) {
-                var attributes = feature.getProperties();
-                var headers = layer.get('headers');
-                for (var i in attributes) {
-                    if (typeof attributes[i] !== 'object' && i in headers) {
-                        attributeForm.appendChild(createRow(i, attributes[i], headers[i]));
-                    }
-                }
-                if (attributeForm.children.length > 0) {
-                    var saveAttributes = document.createElement('input');
-                    saveAttributes.type = 'submit';
-                    saveAttributes.className = 'save';
-                    saveAttributes.value = '';
-                    attributeForm.addEventListener('submit', function (evt) {
-                        evt.preventDefault();
-                        var attributeList = {};
-                        var inputList = [].slice.call(this.querySelectorAll('input[type=text], input[type=number]'));
-                        for (var i = 0; i < inputList.length; i += 1) {
-                            switch (headers[inputList[i].name]) {
-                                case 'string':
-                                    attributeList[inputList[i].name] = inputList[i].value.toString();
-                                    break;
-                                case 'integer':
-                                    attributeList[inputList[i].name] = parseInt(inputList[i].value);
-                                    break;
-                                case 'float':
-                                    attributeList[inputList[i].name] = parseFloat(inputList[i].value);
-                                    break;
-                            }
-                        }
-                        feature.setProperties(attributeList);
-                        map.getOverlays().clear();
-                    });
-                    attributeForm.appendChild(saveAttributes);
-                    this.addOverlay(new ol.Overlay({
-                        element: attributeForm,
-                        position: coord
-                    }));
-                    firstFeature = false;
-                }
-            }
-        }, map, function (layerCandidate) {
-            if (this.selectedLayer !== null && layerCandidate.get('id') === this.selectedLayer.id) {
-                return true;
-            }
-            return false;
-        }, tree);
-    });
+    
+    var tools = new toolBar({
+        map: map,
+        target: 'toolbar',
+        layertree: tree,
+    }).addControl(new ol.control.Zoom()).addSelectControls();
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);

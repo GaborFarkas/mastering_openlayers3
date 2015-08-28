@@ -1,0 +1,203 @@
+body {
+    margin: 0px;
+}
+.map-container {
+    width: 100%;
+    height: 100%; /*Fallback*/
+    height: 100vh;
+}
+.map {
+    max-width: 80%;
+    height: calc(100% - 3.5em);
+    overflow: hidden;
+    position: relative;
+}
+.notification-bar {
+    width: 100%;
+    height: 1.5em;
+    display: table;
+}
+.notification-bar > div {
+    height: 100%;
+    display: table-cell;
+    border: 1px solid grey;
+    width: 34%;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+.notification-bar .message-bar {
+    width: 66%;
+}
+.notification-bar .ol-mouse-position {
+    font-family: monospace;
+    text-align: center;
+    position: static;
+}
+.toolbar {
+    height: 2em;
+    display: table;
+    padding-left: .2em;
+}
+.toolbar .ol-control {
+    position: static;
+    display: table-cell;
+    vertical-align: middle;
+    padding: 0;
+}
+.toolbar .ol-control button {
+    border-radius: 2px;
+    background-color: rgba(219,63,63,.5);
+    width: 2em;
+    display: inline-block;
+    vertical-align: middle;
+}
+.toolbar .ol-control button:hover {
+    background-color: rgba(219,63,63,1);
+}
+.layertree {
+    width: 20%;
+    height: calc(100% - 3.5em);
+    float: left;
+    box-sizing: border-box;
+    border: 1px solid grey;
+    border-bottom: none;
+}
+.layertree .layertree-buttons {
+    height: 2em;
+    border-bottom: 1px solid grey;
+}
+.layertree .layercontainer {
+    position: relative;
+    height: calc(100% - 2em);
+    overflow-y: auto;
+}
+.layercontainer .layer {
+    border: 1px solid grey;
+    border-radius: .5em;
+    height: 2em;
+    margin: 2px 0 2px 0;
+    line-height: 2em;
+    overflow-x: hidden;
+}
+.layer span:first-of-type {
+    position: absolute;
+    left: 1.5em;
+    max-width: calc(100% - 1.5em);
+    white-space: pre;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+.layertree .ol-unselectable, .toolbar .ol-unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.layertree .layertree-buttons button {
+    height: 2em;
+    width: 2em;
+    padding: 0;
+    margin: 0 2px 0 2px;
+    border: none;
+    color: rgba(255,255,255,1);
+    background-color: rgba(0,0,0,.5);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    border-radius: 2px;
+    display: inline-block;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    vertical-align: middle;
+}
+.layertree .layertree-buttons button:hover {
+    background-color: rgba(0,0,0,1);
+}
+.layertree-buttons .addwms {
+    background-image: url(../../res/button_wms.png);
+}
+.layertree-buttons .addwfs {
+    background-image: url(../../res/button_wfs.png);
+}
+.toggleable {
+    position: fixed;
+    background-color: rgba(0,0,0,.5);
+    width: 100%;
+    height: 100vh;
+    top: 0;
+}
+.addlayer {
+    background-color: rgba(255,255,255,1);
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-block;
+}
+.addlayer select {
+    min-width: 11.5em;
+    max-width: 11.5em;
+}
+.buffering span::after {
+	content: '*';
+}
+.error {
+	border-color: red;
+}
+.layertree-buttons .addvector {
+    background-image: url(../../res/button_vector.png);
+}
+.layertree-buttons .deletelayer {
+    background-image: url(../../res/button_delete.png);
+}
+.layercontainer .layer.active {
+    border-color: orange;
+    min-height: 2em;
+    height: auto;
+}
+.layer div {
+    display: none;
+}
+.layer.active div {
+    display: block;
+}
+.layer .visible {
+    top: .5em;
+}
+.layer.over {
+    border-top: 3px solid black;
+}
+.popup {
+    border: 1px solid grey;
+    background-color: rgba(255,255,255,1);
+    border-radius: .5em;
+}
+.popup span {
+    float: left;
+    width: 40%;
+}
+.popup input[type=text], .popup input[type=number] {
+    width: 60%;
+    box-sizing: border-box;
+}
+.popup input[type=button], .popup input[type=submit] {
+    width: 10%;
+    float: right;
+    background-color: rgba(0,0,0,.5);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    border-radius: 2px;
+    color: rgba(255,255,255,1);
+    font-weight: 700;
+}
+.popup .delete {
+    background-image: url(../../res/button_delete.png);
+}
+.popup .save {
+    background-image: url(../../res/button_save.png);
+}
