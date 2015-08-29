@@ -12,6 +12,22 @@ var layerTree = function (options) {
             throw new Error('Please provide a valid element id.');
         }
         this.messages = document.getElementById(options.messages) || document.createElement('span');
+        var observer = new MutationObserver(function (mutations) {
+            if (mutations[0].target.textContent) {
+                var oldText = mutations[0].target.textContent;
+                var timeoutFunction = function () {
+                    if (oldText !== mutations[0].target.textContent) {
+                        oldText = mutations[0].target.textContent;
+                        setTimeout(timeoutFunction, 10000);
+                    } else {
+                        oldText = '';
+                        mutations[0].target.textContent = '';
+                    }
+                };
+            	setTimeout(timeoutFunction, 10000);
+            }
+        });
+        observer.observe(this.messages, {childList: true});
         var controlDiv = document.createElement('div');
         controlDiv.className = 'layertree-buttons';
         controlDiv.appendChild(this.createButton('addwms', 'Add WMS Layer', 'addlayer'));

@@ -13,19 +13,17 @@ var layerTree = function (options) {
         }
         this.messages = document.getElementById(options.messages) || document.createElement('span');
         var observer = new MutationObserver(function (mutations) {
-            if (mutations[0].target.textContent) {
-                var oldText = mutations[0].target.textContent;
-                var timeoutFunction = function () {
-                    if (oldText !== mutations[0].target.textContent) {
-                        oldText = mutations[0].target.textContent;
-                        setTimeout(timeoutFunction, 10000);
-                    } else {
-                        oldText = '';
-                        mutations[0].target.textContent = '';
-                    }
-                };
-            	setTimeout(timeoutFunction, 10000);
-            }
+            var oldText = mutations[0].target.textContent;
+            var timeoutFunction = function () {
+                if (oldText !== mutations[0].target.textContent) {
+                    oldText = mutations[0].target.textContent;
+                    setTimeout(timeoutFunction, 10000);
+                } else {
+                    oldText = '';
+                    mutations[0].target.textContent = '';
+                }
+            };
+        	setTimeout(timeoutFunction, 10000);
         });
         observer.observe(this.messages, {childList: true});
         var controlDiv = document.createElement('div');
@@ -418,9 +416,14 @@ function init() {
                     format: new ol.format.GeoJSON({
                         defaultDataProjection: 'EPSG:4326'
                     }),
-                    url: '../../res/world_countries.geojson'
+                    url: '../../res/world_capitals.geojson',
+                    attributions: [
+                        new ol.Attribution({
+                            html: 'World Capitals © Natural Earth'
+                        })
+                    ]
                 }),
-                name: 'World Countries'
+                name: 'World Capitals'
             })
         ],
         controls: [
@@ -443,98 +446,9 @@ function init() {
             zoom: 2
         })
     });
-
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
         .createRegistry(map.getLayers().item(0))
         .createRegistry(map.getLayers().item(1));
-
-map.on('click', function (evt) {
-    var pixel = evt.pixel;
-    var coord = evt.coordinate;
-    var attributeForm = document.createElement('form');
-    attributeForm.className = 'popup';
-    this.getOverlays().clear();
-    var deletedAttributes = [];
-    var firstFeature = true;
-    function createRow (attributeName, attributeValue, isNew) {
-        var rowElem = document.createElement('div');
-        if (isNew) {
-            var nameInput = document.createElement('input');
-            nameInput.type = 'text';
-            rowElem.appendChild(nameInput);
-        }
-        var attributeSpan = document.createElement('span');
-        attributeSpan.textContent = isNew ? ': ' : attributeName + ': ';
-        rowElem.appendChild(attributeSpan);
-        var attributeInput = document.createElement('input');
-        attributeInput.name = attributeName;
-        attributeInput.type = 'text';
-        attributeInput.value = attributeValue;
-        rowElem.appendChild(attributeInput);
-        var removeButton = document.createElement('input');
-        removeButton.type = 'button';
-        removeButton.className = 'delete';
-        removeButton.addEventListener('click', function () {
-            rowElem.parentNode.removeChild(rowElem);
-            deletedAttributes.push(attributeName);
-        });
-        rowElem.appendChild(removeButton);
-        return rowElem;
-    }
-    this.forEachFeatureAtPixel(pixel, function (feature, layer) {
-        if (firstFeature) {
-            var attributes = feature.getProperties();
-            for (var i in attributes) {
-                if (typeof attributes[i] !== 'object') {
-                    attributeForm.appendChild(createRow(i, attributes[i]));
-                }
-            }
-            if (attributeForm.children.length > 0) {
-                var addAttribute = document.createElement('input');
-                addAttribute.type = 'button';
-                addAttribute.value = '+';
-                addAttribute.addEventListener('click', function () {
-                    attributeForm.insertBefore(createRow('', '', true), this);
-                });
-                attributeForm.appendChild(addAttribute);
-                var saveAttributes = document.createElement('input');
-                saveAttributes.type = 'submit';
-                saveAttributes.value = '';
-                saveAttributes.className = 'save';
-                attributeForm.addEventListener('submit', function (evt) {
-                    evt.preventDefault();
-                    var attributeList = {};
-                    var inputList = [].slice.call(this.querySelectorAll('input[type=text]'));
-                    while (inputList.length > 0 && inputList[0].name !== '') {
-                        attributeList[inputList[0].name] = inputList[0].value;
-                        inputList.splice(0,1);
-                    }
-                    for (i = 0; i < inputList.length; i += 2) {
-                        if (inputList[i].value !== '') {
-                            attributeList[inputList[i].value] = inputList[i + 1].value;
-                        }
-                    }
-                    feature.setProperties(attributeList);
-                    for (i = 0; i < deletedAttributes.length; i += 1) {
-                        feature.unset(deletedAttributes[i]);
-                    }
-                    map.getOverlays().clear();
-                });
-                attributeForm.appendChild(saveAttributes);
-                this.addOverlay(new ol.Overlay({
-                    element: attributeForm,
-                    position: coord
-                }));
-                firstFeature = false;
-            }
-        }
-    }, map, function (layerCandidate) {
-        if (this.selectedLayer !== null && layerCandidate.get('id') === this.selectedLayer.id) {
-            return true;
-        }
-        return false;
-    }, tree);
-});
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);
