@@ -50,6 +50,9 @@ body {
     width: 2em;
     display: inline-block;
     vertical-align: middle;
+    background-size: 1em;
+    background-repeat: no-repeat;
+    background-position: 50%;
 }
 .toolbar .ol-control button:hover {
     background-color: rgba(219,63,63,1);
@@ -87,7 +90,7 @@ body {
     overflow-x: hidden;
     text-overflow: ellipsis;
 }
-.layertree,.toolbar .ol-unselectable {
+.layertree .ol-unselectable, .toolbar .ol-unselectable {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -206,4 +209,37 @@ body {
 }
 .toolbar .ol-control button.active:hover {
     background-color: rgba(234,129,8,1);
+}
+.toolbar .ol-singleselect button {
+    background-image: url(../../res/button_select.png);
+}
+.toolbar .ol-multiselect button {
+    background-image: url(../../res/button_multiselect.png);
+}
+.toolbar .ol-deselect button {
+    background-image: url(../../res/button_deselect.png);
+}
+.layertree-buttons .newvector {
+    background-image: url(../../res/button_newvector.png);
+}
+.toolbar .ol-control button:disabled {
+    background-color: rgba(0,0,0,.2);
+}
+.toolbar .ol-control button:disabled:hover {
+    background-color: rgba(0,0,0,.2);
+}
+.toolbar .ol-addpoint button {
+    background-image: url(../../res/button_addpoint.png);
+}
+.toolbar .ol-addline button {
+    background-image: url(../../res/button_addline.png);
+}
+.toolbar .ol-addpolygon button {
+    background-image: url(../../res/button_addpolygon.png);
+}
+.toolbar .ol-modifyfeat button {
+    background-image: url(../../res/button_modifyfeat.png);
+}
+.toolbar .ol-snap button {
+    background-image: url(../../res/button_snap.png);
 }

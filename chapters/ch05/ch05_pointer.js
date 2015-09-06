@@ -193,6 +193,7 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType, laye
             buttonElem.addEventListener('click', function () {
                 if (_this.selectedLayer) {
                     var layer = _this.getLayerById(_this.selectedLayer.id);
+                    console.log(layer);
                     _this.map.removeLayer(layer);
                     _this.messages.textContent = 'Layer removed successfully.';
                 } else {
@@ -758,6 +759,48 @@ toolBar.prototype.addEditingToolBar = function () {
         }), 'polygon')
     }).setDisabled(true);
     this.editingControls.push(drawPolygon);
+    this.activeFeatures = new ol.Collection();
+    var modifyFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Modify features',
+        className: 'ol-modifyfeat ol-unselectable ol-control',
+        interaction: new ol.interaction.Modify({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(modifyFeature);
+    var snapFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Snap to paths, and vertices',
+        className: 'ol-snap ol-unselectable ol-control',
+        interaction: new ol.interaction.Snap({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    snapFeature.unset('type');
+    this.editingControls.push(snapFeature);
+    var removeFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Remove features',
+        className: 'ol-removefeat ol-unselectable ol-control',
+        interaction: new ol.interaction.RemoveFeature({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(removeFeature);
+    var _this = this;
+    removeFeature.get('interaction').on('change', function (evt) {
+        _this.activeFeatures.remove(this.get('deleteCandidate'));
+    });
+    var dragFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Drag features',
+        className: 'ol-dragfeat ol-unselectable ol-control',
+        interaction: new ol.interaction.DragFeature({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(dragFeature);
     layertree.selectEventEmitter.on('change', function () {
         var layer = layertree.getLayerById(layertree.selectedLayer.id);
         if (layer instanceof ol.layer.Vector) {
@@ -768,6 +811,11 @@ toolBar.prototype.addEditingToolBar = function () {
             if (layerType !== 'point' && layerType !== 'geomcollection') drawPoint.setDisabled(true).set('active', false);
             if (layerType !== 'line' && layerType !== 'geomcollection') drawLine.setDisabled(true).set('active', false);
             if (layerType !== 'polygon' && layerType !== 'geomcollection') drawPolygon.setDisabled(true).set('active', false);
+            var _this = this;
+            setTimeout(function () {
+                _this.activeFeatures.clear();
+                _this.activeFeatures.extend(layer.getSource().getFeatures());
+            }, 0);
         } else {
             this.editingControls.forEach(function (control) {
                 control.set('active', false);
@@ -775,7 +823,9 @@ toolBar.prototype.addEditingToolBar = function () {
             });
         }
     }, this);
-    this.addControl(drawPoint).addControl(drawLine).addControl(drawPolygon);
+    this.addControl(drawPoint).addControl(drawLine).addControl(drawPolygon)
+        .addControl(modifyFeature).addControl(snapFeature).addControl(removeFeature)
+        .addControl(dragFeature);
     return this;
 };
 
@@ -808,12 +858,82 @@ toolBar.prototype.handleEvents = function (interaction, type) {
         }
         if (! error) {
             selectedLayer.getSource().addFeature(evt.feature);
+            this.activeFeatures.push(evt.feature);
         } else {
             this.layertree.messages.textContent = error;
         }
     }, this);
     return interaction;
 };
+
+ol.interaction.RemoveFeature = function (opt_options) {
+    ol.interaction.Pointer.call(this, {
+        handleDownEvent: function (evt) {
+            this.set('deleteCandidate', evt.map.forEachFeatureAtPixel(evt.pixel,
+                function (feature, layer) {
+                    if (this.get('features').getArray().indexOf(feature) !== -1) {
+                        return feature;
+                    }
+                }, this
+            ));
+            return !!this.get('deleteCandidate');
+        },
+        handleUpEvent: function (evt) {
+            evt.map.forEachFeatureAtPixel(evt.pixel, 
+                function (feature, layer) {
+                    if (feature === this.get('deleteCandidate')) {
+                        layer.getSource().removeFeature(feature);
+                        this.changed();
+                    }
+                }, this
+            );
+            this.set('deleteCandidate', null);
+            return false;
+        }
+    });
+    this.setProperties({
+        features: opt_options.features,
+        deleteCandidate: null
+    });
+};
+ol.inherits(ol.interaction.RemoveFeature, ol.interaction.Pointer);
+
+ol.interaction.DragFeature = function (opt_options) {
+    ol.interaction.Pointer.call(this, {
+        handleDownEvent: function (evt) {
+            this.set('draggedFeature', evt.map.forEachFeatureAtPixel(evt.pixel,
+                function (feature, layer) {
+                    if (this.get('features').getArray().indexOf(feature) !== -1) {
+                        return feature;
+                    }
+                }, this
+            ));
+            if (this.get('draggedFeature')) {
+                this.set('coords', evt.coordinate);
+            }
+            return !!this.get('draggedFeature');
+        },
+        handleDragEvent: function (evt) {
+            var deltaX = evt.coordinate[0] - this.get('coords')[0];
+            var deltaY = evt.coordinate[1] - this.get('coords')[1];
+            this.get('draggedFeature').getGeometry().translate(deltaX, deltaY);
+            this.set('coords', evt.coordinate);
+        },
+        handleUpEvent: function (evt) {
+            this.setProperties({
+                coords: null,
+                draggedFeature: null
+            });
+            return false;
+        }
+    });
+    this.setProperties({
+        features: opt_options.features,
+        coords: null,
+        draggedFeature: null
+    });
+};
+ol.inherits(ol.interaction.DragFeature, ol.interaction.Pointer);
 
 function init() {
     document.removeEventListener('DOMContentLoaded', init);

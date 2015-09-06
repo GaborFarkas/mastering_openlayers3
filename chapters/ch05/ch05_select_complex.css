@@ -90,7 +90,7 @@ body {
     overflow-x: hidden;
     text-overflow: ellipsis;
 }
-.layertree .ol-unselectable, .toolbar .ol-unselectable {
+.layertree,.toolbar .ol-unselectable {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;

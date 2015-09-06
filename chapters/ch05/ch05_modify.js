@@ -193,6 +193,7 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType, laye
             buttonElem.addEventListener('click', function () {
                 if (_this.selectedLayer) {
                     var layer = _this.getLayerById(_this.selectedLayer.id);
+                    console.log(layer);
                     _this.map.removeLayer(layer);
                     _this.messages.textContent = 'Layer removed successfully.';
                 } else {
@@ -758,6 +759,26 @@ toolBar.prototype.addEditingToolBar = function () {
         }), 'polygon')
     }).setDisabled(true);
     this.editingControls.push(drawPolygon);
+    this.activeFeatures = new ol.Collection();
+    var modifyFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Modify features',
+        className: 'ol-modifyfeat ol-unselectable ol-control',
+        interaction: new ol.interaction.Modify({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(modifyFeature);
+    var snapFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Snap to paths, and vertices',
+        className: 'ol-snap ol-unselectable ol-control',
+        interaction: new ol.interaction.Snap({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    snapFeature.unset('type');
+    this.editingControls.push(snapFeature);
     layertree.selectEventEmitter.on('change', function () {
         var layer = layertree.getLayerById(layertree.selectedLayer.id);
         if (layer instanceof ol.layer.Vector) {
@@ -768,6 +789,11 @@ toolBar.prototype.addEditingToolBar = function () {
             if (layerType !== 'point' && layerType !== 'geomcollection') drawPoint.setDisabled(true).set('active', false);
             if (layerType !== 'line' && layerType !== 'geomcollection') drawLine.setDisabled(true).set('active', false);
             if (layerType !== 'polygon' && layerType !== 'geomcollection') drawPolygon.setDisabled(true).set('active', false);
+            var _this = this;
+            setTimeout(function () {
+                _this.activeFeatures.clear();
+                _this.activeFeatures.extend(layer.getSource().getFeatures());
+            }, 0);
         } else {
             this.editingControls.forEach(function (control) {
                 control.set('active', false);
@@ -775,7 +801,8 @@ toolBar.prototype.addEditingToolBar = function () {
             });
         }
     }, this);
-    this.addControl(drawPoint).addControl(drawLine).addControl(drawPolygon);
+    this.addControl(drawPoint).addControl(drawLine).addControl(drawPolygon)
+        .addControl(modifyFeature).addControl(snapFeature);
     return this;
 };
 
@@ -808,6 +835,7 @@ toolBar.prototype.handleEvents = function (interaction, type) {
         }
         if (! error) {
             selectedLayer.getSource().addFeature(evt.feature);
+            this.activeFeatures.push(evt.feature);
         } else {
             this.layertree.messages.textContent = error;
         }

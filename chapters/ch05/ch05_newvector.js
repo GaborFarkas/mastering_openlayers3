@@ -41,6 +41,7 @@ var layerTree = function (options) {
         containerDiv.appendChild(this.layerContainer);
         var idCounter = 0;
         this.selectedLayer = null;
+        this.selectEventEmitter = new ol.Observable();
         this.createRegistry = function (layer, buffer) {
             layer.set('id', 'layer_' + idCounter);
             idCounter += 1;
@@ -169,6 +170,7 @@ var layerTree = function (options) {
         }, this);
         this.map.getLayers().on('remove', function (evt) {
             this.removeRegistry(evt.element);
+            this.selectEventEmitter.changed();
         }, this);
         return this;
     } else {
@@ -191,7 +193,6 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType, laye
             buttonElem.addEventListener('click', function () {
                 if (_this.selectedLayer) {
                     var layer = _this.getLayerById(_this.selectedLayer.id);
-                    console.log(layer);
                     _this.map.removeLayer(layer);
                     _this.messages.textContent = 'Layer removed successfully.';
                 } else {
@@ -416,6 +417,7 @@ layerTree.prototype.addSelectEvent = function (node, isChild) {
         }
         _this.selectedLayer = targetNode;
         targetNode.classList.add('active');
+        _this.selectEventEmitter.changed();
     });
     return node;
 };

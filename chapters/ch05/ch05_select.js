@@ -190,7 +190,6 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType, laye
             buttonElem.addEventListener('click', function () {
                 if (_this.selectedLayer) {
                     var layer = _this.getLayerById(_this.selectedLayer.id);
-                    console.log(layer);
                     _this.map.removeLayer(layer);
                     _this.messages.textContent = 'Layer removed successfully.';
                 } else {
@@ -690,7 +689,10 @@ function init() {
         map: map,
         target: 'toolbar',
         layertree: tree,
-    }).addControl(new ol.control.Zoom()).addControl(new ol.control.Interaction({interaction: new ol.interaction.Select()}));
+    }).addControl(new ol.control.Zoom());
+    tools.addControl(new ol.control.Interaction({
+        interaction: new ol.interaction.Select()
+    }));
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);
