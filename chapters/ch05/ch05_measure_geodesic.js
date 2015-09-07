@@ -929,6 +929,135 @@ ol.interaction.DragFeature = function (opt_options) {
 };
 ol.inherits(ol.interaction.DragFeature, ol.interaction.Pointer);
 
+ol.interaction.Measure = function (opt_options) {
+    var options = opt_options || {};
+    if (!(options.map instanceof ol.Map)) {
+        throw new Error('Please provide a valid OpenLayers 3 map');
+    }
+    var style = opt_options.style || new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 6,
+            fill: new ol.style.Fill({
+                color: [0, 153, 255, 1]
+            }),
+            stroke: new ol.style.Stroke({
+                color: [255, 255, 255, 1],
+                width: 1.5
+            })
+        }),
+        stroke: new ol.style.Stroke({
+            color: [0, 153, 255, 1],
+            width: 3
+        }),
+        fill: new ol.style.Fill({
+            color: [255, 255, 255, 0.5]
+        })
+    });
+    var cursorFeature = new ol.Feature();
+    var lineFeature = new ol.Feature();
+    var polygonFeature = new ol.Feature();
+    var sphere = new ol.Sphere(6378137);
+    ol.interaction.Interaction.call(this, {
+        handleEvent: function (evt) {
+            switch (evt.type) {
+                case 'pointermove':
+                    cursorFeature.setGeometry(new ol.geom.Point(evt.coordinate));
+                    var coordinates = this.get('coordinates');
+                    coordinates[coordinates.length - 1] = evt.coordinate;
+                    if (this.get('session') === 'area') {
+                        if (coordinates.length < 3) {
+                            lineFeature.getGeometry().setCoordinates(coordinates);
+                        } else {
+                            polygonFeature.getGeometry().setCoordinates([coordinates]);
+                        }
+                    }
+                    else if (this.get('session') === 'length') {
+                        lineFeature.getGeometry().setCoordinates(coordinates);
+                    }
+                    break;
+                case 'click':
+                    if (!this.get('session')) {
+                        if (evt.originalEvent.shiftKey) {
+                            this.set('session', 'area');
+                            polygonFeature.setGeometry(new ol.geom.Polygon([[[0, 0]]]));
+                        } else {
+                            this.set('session', 'length');
+                        }
+                        lineFeature.setGeometry(new ol.geom.LineString([[0, 0]]));
+                        this.set('coordinates', [evt.coordinate]);
+                    }
+                    this.get('coordinates').push(evt.coordinate);
+                    return false;
+                case 'dblclick':
+                    var unit;
+                    var mapProjection = this.get('map').getView().getProjection();
+                    if (this.get('session') === 'area') {
+                        var lonLatPolygon = polygonFeature.getGeometry().transform(mapProjection, 'EPSG:4326');
+                        var area = Math.abs(sphere.geodesicArea(lonLatPolygon.getCoordinates()[0]));
+                        if (area > 1000000) {
+                            area = area / 1000000;
+                            unit = 'km²';
+                        } else {
+                            unit = 'm²';
+                        }
+                        this.set('result', {
+                            type: 'area',
+                            measurement: area,
+                            unit: unit
+                        });
+                    } else {
+                        var lonLatLine = lineFeature.getGeometry().transform(mapProjection, 'EPSG:4326');
+                        var lineCoordinates = lonLatLine.getCoordinates();
+                        var length = 0;
+                        for (var i = 0; i < lineCoordinates.length - 1; i += 1) {
+                            length += sphere.haversineDistance(lineCoordinates[i], lineCoordinates[i + 1]);
+                        }
+                        if (length > 1000) {
+                            length = length / 1000;
+                            unit = 'km';
+                        } else {
+                            unit = 'm';
+                        }
+                        this.set('result', {
+                            type: 'length',
+                            measurement: length,
+                            unit: unit
+                        });
+                    }
+                    cursorFeature.setGeometry(null);
+                    lineFeature.setGeometry(null);
+                    polygonFeature.setGeometry(null);
+                    this.set('session', null);
+                    return false;
+            }
+            return true;
+        }
+    });
+    this.on('change:active', function (evt) {
+        if (this.getActive()) {
+            this.get('overlay').setMap(this.get('map'));
+        } else {
+            this.get('overlay').setMap(null);
+            this.set('session', null);
+            lineFeature.setGeometry(null);
+            polygonFeature.setGeometry(null);
+        }
+    });
+    this.setProperties({
+        overlay: new ol.layer.Vector({
+            source: new ol.source.Vector({
+                features: [cursorFeature, lineFeature, polygonFeature]
+            }),
+            style: style
+        }),
+        map: options.map,
+        session: null,
+        coordinates: [],
+        result: null
+    });
+};
+ol.inherits(ol.interaction.Measure, ol.interaction.Interaction);
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
     var map = new ol.Map({
@@ -984,6 +1113,21 @@ function init() {
         target: 'toolbar',
         layertree: tree,
     }).addControl(new ol.control.Zoom()).addSelectControls().addEditingToolBar();
+
+    var measureControl = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Measure distances and areas',
+        className: 'ol-measure ol-unselectable ol-control',
+        interaction: new ol.interaction.Measure({
+            map: map
+        })
+    });
+    measureControl.get('interaction').on('change:result', function (evt) {
+        var result = evt.target.get('result');
+        tree.messages.textContent = result.measurement + ' ' + result.unit;
+    });
+
+    tools.addControl(measureControl);
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);
