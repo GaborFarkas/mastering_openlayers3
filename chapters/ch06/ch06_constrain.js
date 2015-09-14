@@ -32,6 +32,7 @@ var layerTree = function (options) {
         controlDiv.className = 'layertree-buttons';
         controlDiv.appendChild(this.createButton('addwms', 'Add WMS Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('addwfs', 'Add WFS Layer', 'addlayer'));
+        controlDiv.appendChild(this.createButton('newvector', 'New Vector Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('addvector', 'Add Vector Layer', 'addlayer'));
         controlDiv.appendChild(this.createButton('deletelayer', 'Remove Layer', 'deletelayer'));
         containerDiv.appendChild(controlDiv);
@@ -40,6 +41,7 @@ var layerTree = function (options) {
         containerDiv.appendChild(this.layerContainer);
         var idCounter = 0;
         this.selectedLayer = null;
+        this.selectEventEmitter = new ol.Observable();
         this.createRegistry = function (layer, buffer) {
             layer.set('id', 'layer_' + idCounter);
             idCounter += 1;
@@ -78,6 +80,7 @@ var layerTree = function (options) {
                     layers.splice(layers.indexOf(sourceLayer), 1);
                     layers.splice(index, 0, sourceLayer);
                     _this.map.render();
+                    _this.map.getLayers().changed();
                 }
             });
             var layerSpan = document.createElement('span');
@@ -167,6 +170,7 @@ var layerTree = function (options) {
         }, this);
         this.map.getLayers().on('remove', function (evt) {
             this.removeRegistry(evt.element);
+            this.selectEventEmitter.changed();
         }, this);
         return this;
     } else {
@@ -189,6 +193,7 @@ layerTree.prototype.createButton = function (elemName, elemTitle, elemType, laye
             buttonElem.addEventListener('click', function () {
                 if (_this.selectedLayer) {
                     var layer = _this.getLayerById(_this.selectedLayer.id);
+                    console.log(layer);
                     _this.map.removeLayer(layer);
                     _this.messages.textContent = 'Layer removed successfully.';
                 } else {
@@ -413,6 +418,7 @@ layerTree.prototype.addSelectEvent = function (node, isChild) {
         }
         _this.selectedLayer = targetNode;
         targetNode.classList.add('active');
+        _this.selectEventEmitter.changed();
     });
     return node;
 };
@@ -536,35 +542,550 @@ layerTree.prototype.randomHexColor = function() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16);
 };
 
+var toolBar = function (options) {
+    'use strict';
+    if (!(this instanceof toolBar)) {
+        throw new Error('toolBar must be constructed with the new keyword.');
+    } else if (typeof options === 'object' && options.map && options.target && options.layertree) {
+        if (!(options.map instanceof ol.Map)) {
+            throw new Error('Please provide a valid OpenLayers 3 map object.');
+        }
+        this.map = options.map;
+        this.toolbar = document.getElementById(options.target);
+        this.layertree = options.layertree;
+        this.controls = new ol.Collection();
+        return this;
+    } else {
+        throw new Error('Invalid parameter(s) provided.');
+    }
+};
+
+toolBar.prototype.addControl = function (control) {
+    if (!(control instanceof ol.control.Control)) {
+        throw new Error('Only controls can be added to the toolbar.');
+    }
+    if (control.get('type') === 'toggle') {
+        control.on('change:active', function () {
+            if (control.get('active')) {
+                this.controls.forEach(function (controlToDisable) {
+                    if (controlToDisable.get('type') === 'toggle' && controlToDisable !== control) {
+                        controlToDisable.set('active', false);
+                    }
+                });
+            }
+        }, this);
+    }
+    control.setTarget(this.toolbar);
+    this.controls.push(control);
+    this.map.addControl(control);
+    return this;
+};
+
+toolBar.prototype.removeControl = function (control) {
+    this.controls.remove(control);
+    this.map.removeControl(control);
+    return this;
+};
+
+ol.control.Interaction = function (opt_options) {
+    var options = opt_options || {};
+    var controlDiv = document.createElement('div');
+    controlDiv.className = options.className || 'ol-unselectable ol-control';
+    var controlButton = document.createElement('button');
+    controlButton.textContent = options.label || 'I';
+    controlButton.title = options.tipLabel || 'Custom interaction';
+    controlDiv.appendChild(controlButton);
+    this.setDisabled = function (bool) {
+        if (typeof bool === 'boolean') {
+            controlButton.disabled = bool;
+            return this;
+        }
+    };
+    var _this = this;
+    controlButton.addEventListener('click', function () {
+        if (_this.get('interaction').getActive()) {
+            _this.set('active', false);
+        } else {
+            _this.set('active', true);
+        }
+    });
+    var interaction = options.interaction;
+    ol.control.Control.call(this, {
+        element: controlDiv,
+        target: options.target
+    });
+    this.setProperties({
+        interaction: interaction,
+        active: false,
+        type: 'toggle',
+        destroyFunction: function (evt) {
+            if (evt.element === _this) {
+                this.removeInteraction(_this.get('interaction'));
+            }
+        }
+    });
+    this.on('change:active', function () {
+        this.get('interaction').setActive(this.get('active'));
+        if (this.get('active')) {
+            controlButton.classList.add('active');
+        } else {
+            controlButton.classList.remove('active');
+        }
+    }, this);
+};
+ol.inherits(ol.control.Interaction, ol.control.Control);
+
+ol.control.Interaction.prototype.setMap = function (map) {
+    ol.control.Control.prototype.setMap.call(this, map);
+    var interaction = this.get('interaction');
+    if (map === null) {
+        ol.Observable.unByKey(this.get('eventId'));
+    } else if (map.getInteractions().getArray().indexOf(interaction) === -1) {
+        map.addInteraction(interaction);
+        interaction.setActive(false);
+        this.set('eventId', map.getControls().on('remove', this.get('destroyFunction'), map));
+    }
+};
+
+toolBar.prototype.addSelectControls = function () {
+    var layertree = this.layertree;
+    var selectInteraction = new ol.interaction.Select({
+        layers: function (layer) {
+            if (layertree.selectedLayer) {
+                if (layer === layertree.getLayerById(layertree.selectedLayer.id)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        wrapX: false
+    });
+    var selectSingle = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Select feature',
+        className: 'ol-singleselect ol-unselectable ol-control',
+        interaction: selectInteraction
+    });
+    var boxInteraction = new ol.interaction.DragBox({
+        style: new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: '#000000',
+                width: 2
+            })
+        })
+    });
+    var selectMulti = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Select features with a box',
+        className: 'ol-multiselect ol-unselectable ol-control',
+        interaction: boxInteraction
+    });
+    boxInteraction.on('boxend', function (evt) {
+        selectInteraction.getFeatures().clear();
+        var extent = boxInteraction.getGeometry().getExtent();
+        if (this.layertree.selectedLayer) {
+            var source = layertree.getLayerById(layertree.selectedLayer.id).getSource();
+            if (source instanceof ol.source.Vector) {
+                source.forEachFeatureIntersectingExtent(extent, function (feature) {
+                    selectInteraction.getFeatures().push(feature);
+                });
+            }
+        }
+    }, this);
+    var controlDiv = document.createElement('div');
+    controlDiv.className = 'ol-deselect ol-unselectable ol-control';
+    var controlButton = document.createElement('button');
+    controlButton.title = 'Remove selection(s)';
+    controlDiv.appendChild(controlButton);
+    controlButton.addEventListener('click', function () {
+        selectInteraction.getFeatures().clear();
+    });
+    var deselectControl = new ol.control.Control({
+        element: controlDiv
+    });
+    this.addControl(selectSingle)
+        .addControl(selectMulti)
+        .addControl(deselectControl);
+    return this;
+};
+
+layerTree.prototype.newVectorLayer = function (form) {
+    var type = form.type.value;
+    if (type !== 'point' && type !== 'line' && type !== 'polygon' && type !== 'geomcollection') {
+        this.messages.textContent = 'Unrecognized layer type.';
+        return false;
+    }
+    var layer = new ol.layer.Vector({
+        source: new ol.source.Vector(),
+        name: form.displayname.value || 'Unnamed Layer',
+        type: type
+    });
+    this.addBufferIcon(layer);
+    this.map.addLayer(layer);
+    layer.getSource().changed();
+    this.messages.textContent = 'New vector layer created successfully.';
+    return this;
+};
+
+toolBar.prototype.addEditingToolBar = function () {
+    var layertree = this.layertree;
+    this.editingControls = new ol.Collection();
+    var drawPoint = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Add points',
+        className: 'ol-addpoint ol-unselectable ol-control',
+        interaction: this.handleEvents(new ol.interaction.Draw({
+            type: 'Point',
+            snapTolerance: 1
+        }), 'point')
+    }).setDisabled(true);
+    this.editingControls.push(drawPoint);
+    var drawLine = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Add lines',
+        className: 'ol-addline ol-unselectable ol-control',
+        interaction: this.handleEvents(new ol.interaction.Draw({
+            type: 'LineString',
+            snapTolerance: 1
+        }), 'line')
+    }).setDisabled(true);
+    this.editingControls.push(drawLine);
+    var drawPolygon = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Add polygons',
+        className: 'ol-addpolygon ol-unselectable ol-control',
+        interaction: this.handleEvents(new ol.interaction.Draw({
+            type: 'Polygon',
+            snapTolerance: 1
+        }), 'polygon')
+    }).setDisabled(true);
+    this.editingControls.push(drawPolygon);
+    this.activeFeatures = new ol.Collection();
+    var modifyFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Modify features',
+        className: 'ol-modifyfeat ol-unselectable ol-control',
+        interaction: new ol.interaction.Modify({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(modifyFeature);
+    var snapFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Snap to paths, and vertices',
+        className: 'ol-snap ol-unselectable ol-control',
+        interaction: new ol.interaction.Snap({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    snapFeature.unset('type');
+    this.editingControls.push(snapFeature);
+    var removeFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Remove features',
+        className: 'ol-removefeat ol-unselectable ol-control',
+        interaction: new ol.interaction.RemoveFeature({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(removeFeature);
+    var dragFeature = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Drag features',
+        className: 'ol-dragfeat ol-unselectable ol-control',
+        interaction: new ol.interaction.DragFeature({
+            features: this.activeFeatures
+        })
+    }).setDisabled(true);
+    this.editingControls.push(dragFeature);
+    layertree.selectEventEmitter.on('change', function () {
+        var layer = layertree.getLayerById(layertree.selectedLayer.id);
+        if (layer instanceof ol.layer.Vector) {
+            this.editingControls.forEach(function (control) {
+                control.setDisabled(false);
+            });
+            var layerType = layer.get('type');
+            if (layerType !== 'point' && layerType !== 'geomcollection') drawPoint.setDisabled(true).set('active', false);
+            if (layerType !== 'line' && layerType !== 'geomcollection') drawLine.setDisabled(true).set('active', false);
+            if (layerType !== 'polygon' && layerType !== 'geomcollection') drawPolygon.setDisabled(true).set('active', false);
+            var _this = this;
+            setTimeout(function () {
+                _this.activeFeatures.clear();
+                _this.activeFeatures.extend(layer.getSource().getFeatures());
+            }, 0);
+        } else {
+            this.editingControls.forEach(function (control) {
+                control.set('active', false);
+                control.setDisabled(true);
+            });
+        }
+    }, this);
+    this.addControl(drawPoint).addControl(drawLine).addControl(drawPolygon)
+        .addControl(modifyFeature).addControl(snapFeature).addControl(removeFeature)
+        .addControl(dragFeature);
+    return this;
+};
+
+toolBar.prototype.handleEvents = function (interaction, type) {
+    if (type !== 'point') {
+        interaction.on('drawstart', function (evt) {
+            var error = false;
+            if (this.layertree.selectedLayer) {
+                var selectedLayer = this.layertree.getLayerById(this.layertree.selectedLayer.id);
+                var layerType = selectedLayer.get('type');
+                error = (layerType !== type && layerType !== 'geomcollection') ? true : false;
+            } else {
+                error = true;
+            }
+            if (error) {
+                interaction.finishDrawing();
+            }
+        }, this);
+    }
+    interaction.on('drawend', function (evt) {
+        var error = '';
+        errorcheck: if (this.layertree.selectedLayer) {
+            var selectedLayer = this.layertree.getLayerById(this.layertree.selectedLayer.id);
+            error = selectedLayer instanceof ol.layer.Vector ? '' : 'Please select a valid vector layer.';
+            if (error) break errorcheck;
+            var layerType = selectedLayer.get('type');
+            error = (layerType === type || layerType === 'geomcollection') ? '' : 'Selected layer has a different vector type.';
+        } else {
+            error = 'Please select a layer first.';
+        }
+        if (! error) {
+            selectedLayer.getSource().addFeature(evt.feature);
+            this.activeFeatures.push(evt.feature);
+        } else {
+            this.layertree.messages.textContent = error;
+        }
+    }, this);
+    return interaction;
+};
+
+ol.interaction.RemoveFeature = function (opt_options) {
+    ol.interaction.Pointer.call(this, {
+        handleDownEvent: function (evt) {
+            this.set('deleteCandidate', evt.map.forEachFeatureAtPixel(evt.pixel,
+                function (feature, layer) {
+                    if (this.get('features').getArray().indexOf(feature) !== -1) {
+                        return feature;
+                    }
+                }, this
+            ));
+            return !!this.get('deleteCandidate');
+        },
+        handleUpEvent: function (evt) {
+            evt.map.forEachFeatureAtPixel(evt.pixel, 
+                function (feature, layer) {
+                    if (feature === this.get('deleteCandidate')) {
+                        layer.getSource().removeFeature(feature);
+                        this.get('features').remove(feature);
+                    }
+                }, this
+            );
+            this.set('deleteCandidate', null);
+        }
+    });
+    this.setProperties({
+        features: opt_options.features,
+        deleteCandidate: null
+    });
+};
+ol.inherits(ol.interaction.RemoveFeature, ol.interaction.Pointer);
+
+ol.interaction.DragFeature = function (opt_options) {
+    ol.interaction.Pointer.call(this, {
+        handleDownEvent: function (evt) {
+            this.set('draggedFeature', evt.map.forEachFeatureAtPixel(evt.pixel,
+                function (feature, layer) {
+                    if (this.get('features').getArray().indexOf(feature) !== -1) {
+                        return feature;
+                    }
+                }, this
+            ));
+            if (this.get('draggedFeature')) {
+                this.set('coords', evt.coordinate);
+            }
+            return !!this.get('draggedFeature');
+        },
+        handleDragEvent: function (evt) {
+            var deltaX = evt.coordinate[0] - this.get('coords')[0];
+            var deltaY = evt.coordinate[1] - this.get('coords')[1];
+            this.get('draggedFeature').getGeometry().translate(deltaX, deltaY);
+            this.set('coords', evt.coordinate);
+        },
+        handleUpEvent: function (evt) {
+            this.setProperties({
+                coords: null,
+                draggedFeature: null
+            });
+        }
+    });
+    this.setProperties({
+        features: opt_options.features,
+        coords: null,
+        draggedFeature: null
+    });
+};
+ol.inherits(ol.interaction.DragFeature, ol.interaction.Pointer);
+
+ol.interaction.Measure = function (opt_options) {
+    var options = opt_options || {};
+    if (!(options.map instanceof ol.Map)) {
+        throw new Error('Please provide a valid OpenLayers 3 map');
+    }
+    var style = opt_options.style || new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 6,
+            fill: new ol.style.Fill({
+                color: [0, 153, 255, 1]
+            }),
+            stroke: new ol.style.Stroke({
+                color: [255, 255, 255, 1],
+                width: 1.5
+            })
+        }),
+        stroke: new ol.style.Stroke({
+            color: [0, 153, 255, 1],
+            width: 3
+        }),
+        fill: new ol.style.Fill({
+            color: [255, 255, 255, 0.5]
+        })
+    });
+    var cursorFeature = new ol.Feature();
+    var lineFeature = new ol.Feature();
+    var polygonFeature = new ol.Feature();
+    ol.interaction.Interaction.call(this, {
+        handleEvent: function (evt) {
+            switch (evt.type) {
+                case 'pointermove':
+                    cursorFeature.setGeometry(new ol.geom.Point(evt.coordinate));
+                    var coordinates = this.get('coordinates');
+                    coordinates[coordinates.length - 1] = evt.coordinate;
+                    if (this.get('session') === 'area') {
+                        if (coordinates.length < 3) {
+                            lineFeature.getGeometry().setCoordinates(coordinates);
+                        } else {
+                            polygonFeature.getGeometry().setCoordinates([coordinates]);
+                        }
+                    }
+                    else if (this.get('session') === 'length') {
+                        lineFeature.getGeometry().setCoordinates(coordinates);
+                    }
+                    break;
+                case 'click':
+                    if (!this.get('session')) {
+                        if (evt.originalEvent.shiftKey) {
+                            this.set('session', 'area');
+                            polygonFeature.setGeometry(new ol.geom.Polygon([[[0, 0]]]));
+                        } else {
+                            this.set('session', 'length');
+                        }
+                        lineFeature.setGeometry(new ol.geom.LineString([[0, 0]]));
+                        this.set('coordinates', [evt.coordinate]);
+                    }
+                    this.get('coordinates').push(['chicken', 'nuggets']);
+                    return false;
+                case 'dblclick':
+                    var unit;
+                    if (this.get('session') === 'area') {
+                        var area = polygonFeature.getGeometry().getArea();
+                        if (area > 1000000) {
+                            area = area / 1000000;
+                            unit = 'km²';
+                        } else {
+                            unit = 'm²';
+                        }
+                        this.set('result', {
+                            type: 'area',
+                            measurement: area,
+                            unit: unit
+                        });
+                    } else {
+                        var length = lineFeature.getGeometry().getLength();
+                        if (length > 1000) {
+                            length = length / 1000;
+                            unit = 'km';
+                        } else {
+                            unit = 'm';
+                        }
+                        this.set('result', {
+                            type: 'length',
+                            measurement: length,
+                            unit: unit
+                        });
+                    }
+                    cursorFeature.setGeometry(null);
+                    lineFeature.setGeometry(null);
+                    polygonFeature.setGeometry(null);
+                    this.set('session', null);
+                    return false;
+            }
+            return true;
+        }
+    });
+    this.on('change:active', function (evt) {
+        if (this.getActive()) {
+            this.get('overlay').setMap(this.get('map'));
+        } else {
+            this.get('overlay').setMap(null);
+            this.set('session', null);
+            lineFeature.setGeometry(null);
+            polygonFeature.setGeometry(null);
+        }
+    });
+    this.setProperties({
+        overlay: new ol.layer.Vector({
+            source: new ol.source.Vector({
+                features: [cursorFeature, lineFeature, polygonFeature]
+            }),
+            style: style
+        }),
+        map: options.map,
+        session: null,
+        coordinates: [],
+        result: null
+    });
+};
+ol.inherits(ol.interaction.Measure, ol.interaction.Interaction);
+
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
-    map = new ol.Map({
+    var map = new ol.Map({
         target: 'map',
         layers: [
             new ol.layer.Tile({
-                source: new ol.source.OSM(),
-                name: 'OpenStreetMap'
+                source: new ol.source.TileWMS({
+                    url: 'http://demo.opengeo.org/geoserver/wms',
+                    params: {
+                        layers: 'bluemarble',
+                        format: 'image/png'
+                    },
+                    wrapX: false
+                }),
+                name: 'Blue Marble'
             }),
             new ol.layer.Vector({
                 source: new ol.source.Vector({
                     format: new ol.format.GeoJSON({
                         defaultDataProjection: 'EPSG:4326'
                     }),
-                    url: '../../res/world_countries.geojson'
+                    url: '../../res/world_countries.geojson',
+                    wrapX: false
                 }),
                 name: 'World Countries',
                 headers: {
                     pop_est: 'integer',
                     gdp_md_est: 'integer'
-                }
+                },
+                type: 'polygon',
+                updateWhileAnimating: true,
+                updateWhileInteracting: true
             })
         ],
         controls: [
-            //Define the default controls
-            new ol.control.Zoom({
-                target: 'toolbar'
-            }),
-            //Define some new controls
             new ol.control.MousePosition({
                 coordinateFormat: function (coordinates) {
                     var coord_x = coordinates[0].toFixed(3);
@@ -576,8 +1097,11 @@ function init() {
         ],
         view: new ol.View({
             center: [0, 0],
-            zoom: 2
-        })
+            zoom: 3,
+            extent: ol.proj.get('EPSG:3857').getExtent()
+        }),
+        loadTilesWhileAnimating: true,
+        loadTilesWhileInteracting: true
     });
 
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
@@ -587,112 +1111,46 @@ function init() {
     map.getLayers().item(1).getSource().on('change', function (evt) {
         if (this.getState() === 'ready') {
             map.getLayers().item(1).buildHeaders();
-            var geoJSONParser = new ol.format.GeoJSON();
-            var featString = geoJSONParser.writeFeatures(this.getFeatures());
-            var request = new XMLHttpRequest();
-            request.open('POST', 'myserver/myscript');
-            request.send(featString);
-            
-            var modifiedFeatures = [];
-            var features = this.getFeatures();
-            for (var i = 0; i < features.length; i += 1) {
-                var modifiedFeature = features[i].clone();
-                modifiedFeature.getGeometry().applyTransform(function (flatCoordinates, flatCoordinates2, stride) {
-                        for (var j = 0; j < flatCoordinates.length; j += stride) {
-                        var y = flatCoordinates[j];
-                        var x = flatCoordinates[j + 1];
-                        flatCoordinates[j] = x;
-                        flatCoordinates[j + 1] = y;
-                    }
-                });
-                modifiedFeatures.push(modifiedFeature);
-            }
-            var WFSTParser = new ol.format.WFS();
-            var featObject = WFSTParser.writeTransaction(null, modifiedFeatures, null, {
-                featureType: 'ne:countries',
-                featureNS: 'http://naturalearthdata.com',
-                srsName: 'EPSG:4326'
-            });
-            var serializer = new XMLSerializer();
-            var featString = serializer.serializeToString(featObject);
-            var request = new XMLHttpRequest();
-            request.open('POST', 'myowsserver?SERVICE=WFS');
-            request.setRequestHeader('Content-Type', 'text/xml');
-            request.send(featString);
         }
     });
+    
+    var tools = new toolBar({
+        map: map,
+        target: 'toolbar',
+        layertree: tree,
+    }).addControl(new ol.control.Zoom()).addSelectControls().addEditingToolBar();
 
-    map.on('click', function (evt) {
-        var pixel = evt.pixel;
-        var coord = evt.coordinate;
-        var attributeForm = document.createElement('form');
-        attributeForm.className = 'popup';
-        this.getOverlays().clear();
-        var firstFeature = true;
-        function createRow (attributeName, attributeValue, type) {
-            var rowElem = document.createElement('div');
-            var attributeSpan = document.createElement('span');
-            attributeSpan.textContent = attributeName + ': ';
-            rowElem.appendChild(attributeSpan);
-            var attributeInput = document.createElement('input');
-            attributeInput.name = attributeName;
-            attributeInput.type = 'text';
-            if (type !== 'string') {
-                attributeInput.type = 'number';
-                attributeInput.step = (type === 'float') ? 1e-6 : 1;
+    var measureControl = new ol.control.Interaction({
+        label: ' ',
+        tipLabel: 'Measure distances and areas',
+        className: 'ol-measure ol-unselectable ol-control',
+        interaction: new ol.interaction.Measure({
+            map: map
+        })
+    });
+    measureControl.get('interaction').on('change:result', function (evt) {
+        var result = evt.target.get('result');
+        tree.messages.textContent = result.measurement + ' ' + result.unit;
+    });
+
+    tools.addControl(measureControl);
+
+    map.getView().on('propertychange', function (evt) {
+        var projExtent = this.getProjection().getExtent();
+        if (projExtent) {
+            var currentCenter = this.getCenter();
+            var currentResolution = this.getResolution();
+            var mapSize = map.getSize();
+            var newExtent = [projExtent[0] + currentResolution * mapSize[0] / 2,
+                projExtent[1] + currentResolution * mapSize[1] / 2,
+                projExtent[2] - currentResolution * mapSize[0] / 2,
+                projExtent[3] - currentResolution * mapSize[1] / 2];
+            if (!(new ol.geom.Point(currentCenter).intersectsExtent(newExtent))) {
+                currentCenter[0] = Math.min(Math.max(currentCenter[0], newExtent[0]), newExtent[2]);
+                currentCenter[1] = Math.min(Math.max(currentCenter[1], newExtent[1]), newExtent[3]);
+                this.setCenter(currentCenter);
             }
-            attributeInput.value = attributeValue;
-            rowElem.appendChild(attributeInput);
-            return rowElem;
         }
-        this.forEachFeatureAtPixel(pixel, function (feature, layer) {
-            if (firstFeature) {
-                var attributes = feature.getProperties();
-                var headers = layer.get('headers');
-                for (var i in attributes) {
-                    if (typeof attributes[i] !== 'object' && i in headers) {
-                        attributeForm.appendChild(createRow(i, attributes[i], headers[i]));
-                    }
-                }
-                if (attributeForm.children.length > 0) {
-                    var saveAttributes = document.createElement('input');
-                    saveAttributes.type = 'submit';
-                    saveAttributes.className = 'save';
-                    saveAttributes.value = '';
-                    attributeForm.addEventListener('submit', function (evt) {
-                        evt.preventDefault();
-                        var attributeList = {};
-                        var inputList = [].slice.call(this.querySelectorAll('input[type=text], input[type=number]'));
-                        for (var i = 0; i < inputList.length; i += 1) {
-                            switch (headers[inputList[i].name]) {
-                                case 'string':
-                                    attributeList[inputList[i].name] = inputList[i].value.toString();
-                                    break;
-                                case 'integer':
-                                    attributeList[inputList[i].name] = parseInt(inputList[i].value);
-                                    break;
-                                case 'float':
-                                    attributeList[inputList[i].name] = parseFloat(inputList[i].value);
-                                    break;
-                            }
-                        }
-                        feature.setProperties(attributeList);
-                        map.getOverlays().clear();
-                    });
-                    attributeForm.appendChild(saveAttributes);
-                    this.addOverlay(new ol.Overlay({
-                        element: attributeForm,
-                        position: coord
-                    }));
-                    firstFeature = false;
-                }
-            }
-        }, map, function (layerCandidate) {
-            if (this.selectedLayer !== null && layerCandidate.get('id') === this.selectedLayer.id) {
-                return true;
-            }
-            return false;
-        }, tree);
     });
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
@@ -715,6 +1173,11 @@ function init() {
     document.getElementById('addvector_form').addEventListener('submit', function (evt) {
         evt.preventDefault();
         tree.addVectorLayer(this);
+        this.parentNode.style.display = 'none';
+    });
+    document.getElementById('newvector_form').addEventListener('submit', function (evt) {
+        evt.preventDefault();
+        tree.newVectorLayer(this);
         this.parentNode.style.display = 'none';
     });
 }
