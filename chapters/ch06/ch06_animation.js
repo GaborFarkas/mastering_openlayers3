@@ -1227,7 +1227,7 @@ ol.control.RotationControl = function (opt_options) {
         element: controlInput,
         target: options.target
     });
-    this.set('lement', controlInput);
+    this.set('element', controlInput);
 };
 ol.inherits(ol.control.RotationControl, ol.control.Control);
 
@@ -1318,8 +1318,6 @@ ol.control.RocketFlight = function () {
     controlButton.title = 'Fly to me';
     controlButton.addEventListener('click', function () {
         var view = _this.getMap().getView();
-        var resolution = view.getResolution();
-        var center = view.getCenter();
         _this.getMap().beforeRender(
             ol.animation.rocketTakeoff({
                 resolution: view.getResolution(),
@@ -1336,7 +1334,6 @@ ol.control.RocketFlight = function () {
                 }),
                 ol.animation.rocketLanding({
                     resolution: view.getResolution(),
-                    source: view.getCenter(),
                     rotation: view.getRotation()
                 })
             );

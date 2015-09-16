@@ -1227,7 +1227,7 @@ ol.control.RotationControl = function (opt_options) {
         element: controlInput,
         target: options.target
     });
-    this.set('lement', controlInput);
+    this.set('element', controlInput);
 };
 ol.inherits(ol.control.RotationControl, ol.control.Control);
 
