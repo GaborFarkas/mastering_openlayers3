@@ -1060,12 +1060,12 @@ function init() {
                 source: new ol.source.TileWMS({
                     url: 'http://demo.opengeo.org/geoserver/wms',
                     params: {
-                        layers: 'bluemarble',
+                        layers: 'ne_50m_land',
                         format: 'image/png'
                     },
                     wrapX: false
                 }),
-                name: 'Blue Marble'
+                name: 'Natural Earth Land'
             }),
             new ol.layer.Vector({
                 source: new ol.source.Vector({

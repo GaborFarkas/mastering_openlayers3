@@ -1158,7 +1158,7 @@ ol.control.ZoomTo = function (opt_options) {
     controlButton.textContent = options.label || '';
     controlButton.title = options.tipLabel || 'Zoom to extent';
     controlButton.addEventListener('click', function (evt) {
-        var zoomCandidate = _this.get('zoomFunction')();
+        var zoomCandidate = _this.get('extentFunction')();
         if (zoomCandidate instanceof ol.geom.SimpleGeometry || 
             (Object.prototype.toString.call(zoomCandidate) === '[object Array]' && zoomCandidate.length === 4)) {
             _this.getMap().getView().fit(zoomCandidate, _this.getMap().getSize());
@@ -1169,7 +1169,7 @@ ol.control.ZoomTo = function (opt_options) {
         element: controlDiv,
         target: options.target
     });
-    this.set('zoomFunction', options.zoomFunction);
+    this.set('extentFunction', options.extentFunction);
 };
 ol.inherits(ol.control.ZoomTo, ol.control.Control);
 
@@ -1182,7 +1182,7 @@ toolBar.prototype.addExtentControls = function () {
     var zoomToLayer = new ol.control.ZoomTo({
         class: 'ol-zoom-layer ol-unselectable ol-control',
         tipLabel: 'Zoom to layer extent',
-        zoomFunction: function () {
+        extentFunction: function () {
             var source = _this.layertree.getLayerById(_this.layertree.selectedLayer.id).getSource();
             if (source.getExtent()) {
                 return source.getExtent();
@@ -1193,7 +1193,7 @@ toolBar.prototype.addExtentControls = function () {
     var zoomToSelected = new ol.control.ZoomTo({
         class: 'ol-zoom-selected ol-unselectable ol-control',
         tipLabel: 'Zoom to selected feature',
-        zoomFunction: function () {
+        extentFunction: function () {
             var features = _this.selectInteraction.getFeatures();
             if (features.getLength() === 1) {
                 var geom = features.item(0).getGeometry();
@@ -1237,7 +1237,7 @@ ol.control.RotationControl.prototype.setMap = function (map) {
         ol.Observable.unByKey(this.get('eventId'));
     } else {
         this.set('eventId', map.getView().on('change:rotation', function (evt) {
-            var degreeValue = map.getView().getRotation() / Math.PI * 180;
+            var degreeValue = Math.round(map.getView().getRotation() / Math.PI * 180);
             this.get('element').value = degreeValue;
         }, this));
     }
@@ -1252,12 +1252,12 @@ function init() {
                 source: new ol.source.TileWMS({
                     url: 'http://demo.opengeo.org/geoserver/wms',
                     params: {
-                        layers: 'bluemarble',
+                        layers: 'ne_50m_land',
                         format: 'image/png'
                     },
                     wrapX: false
                 }),
-                name: 'Blue Marble'
+                name: 'Natural Earth Land'
             }),
             new ol.layer.Vector({
                 source: new ol.source.Vector({
