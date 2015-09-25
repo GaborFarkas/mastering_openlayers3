@@ -387,41 +387,23 @@ layerTree.prototype.stopPropagationOnEvent = function (node, event) {
     return node;
 };
 
-ol.control.RasterCalculator = function (opt_options) {
+ol.control.Print = function (opt_options) {
     var options = opt_options || {};
     var _this = this;
     var controlDiv = document.createElement('div');
-    controlDiv.className = options.class || 'ol-rastercalc ol-unselectable ol-control';
+    controlDiv.className = options.class || 'ol-print ol-unselectable ol-control';
     var controlButton = document.createElement('button');
-    controlButton.textContent = options.label || 'R';
-    controlButton.title = options.tipLabel || 'Calculate Raster';
-    var filterPixel = function (pixels) {
-        var inputPixel = pixels[0];
-        var maskPixel = pixels[1];
-        if (maskPixel[0] > maskPixel[1] && maskPixel[0] > maskPixel[2] && Math.abs(maskPixel[1] - maskPixel[2]) < 25) {
-            return inputPixel;
-        }
-        return [0, 0, 0, 0];
-    };
+    controlButton.textContent = options.label || 'P';
+    controlButton.title = options.tipLabel || 'Print Map';
+    var dataURL;
     controlButton.addEventListener('click', function (evt) {
-        var layer = _this.getMap().getLayers().item(0);
-        var mask = _this.getMap().getLayers().item(1);
-        if (layer && mask) {
-            var raster = new ol.source.Raster({
-                sources: [layer.getSource(), mask.getSource()],
-                operationType: 'pixel',
-                operation: function (pixels, data) {
-                    return filter(pixels);
-                },
-                lib: {
-                    filter: filterPixel
-                }
-            });
-            _this.getMap().addLayer(new ol.layer.Image({
-                source: raster,
-                name: 'Urban elevation'
-            }));
-        }
+        _this.getMap().once('postcompose', function (evt) {
+            var canvas = evt.context.canvas;
+            dataURL = canvas.toDataURL('image/png');
+        });
+        _this.getMap().renderSync();
+        window.open(dataURL, '_blank');
+        dataURL = null;
     });
     controlDiv.appendChild(controlButton);
     ol.control.Control.call(this, {
@@ -429,7 +411,7 @@ ol.control.RasterCalculator = function (opt_options) {
         target: options.target
     });
 };
-ol.inherits(ol.control.RasterCalculator, ol.control.Control);
+ol.inherits(ol.control.Print, ol.control.Control);
 
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
@@ -475,7 +457,7 @@ function init() {
                 },
                 target: 'coordinates'
             }),
-            new ol.control.RasterCalculator({
+            new ol.control.Print({
                 target: 'toolbar'
             })
         ],
