@@ -444,8 +444,8 @@ function init() {
     clippedLayer.on('precompose', function (evt) {
         var ctx = evt.context;
         ctx.save();
+        ctx.beginPath();
         ctx.rect(20, 20, 100, 100);
-        ctx.stroke();
         ctx.clip();
     });
     clippedLayer.on('postcompose', function (evt) {

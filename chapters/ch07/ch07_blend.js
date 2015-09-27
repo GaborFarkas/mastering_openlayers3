@@ -124,12 +124,13 @@ var layerTree = function (options) {
             blendMode.appendChild(this.createOption('multiply'));
             blendMode.appendChild(this.createOption('difference'));
             blendMode.addEventListener('change', function () {
-                if (_this.blendMode) {
-                    ol.Observable.unByKey(_this.blendMode);
+                if (layer.get('blendMode')) {
+                    ol.Observable.unByKey(layer.get('blendMode'));
+                    layer.unset('blendMode');
                 }
-                _this.blendMode = layer.on('precompose', function (evt) {
+                layer.set('blendMode', layer.on('precompose', function (evt) {
                     evt.context.globalCompositeOperation = blendMode.value;
-                });
+                }));
                 _this.map.render();
             });
             layerControls.appendChild(this.stopPropagationOnEvent(blendMode, 'click'));

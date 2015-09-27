@@ -395,6 +395,14 @@ ol.control.Convolve = function (opt_options) {
     var controlButton = document.createElement('button');
     controlButton.textContent = options.label || 'C';
     controlButton.title = options.tipLabel || 'Convolve bottom layer';
+    var toGrayScale = function (inputArray) {
+        for (var i = 0; i < inputArray.length; i += 4) {
+            var grayScaleValue = (inputArray[i] + inputArray[i + 1] + inputArray[i + 2]) / 3;
+            inputArray[i] = grayScaleValue;
+            inputArray[i + 1] = grayScaleValue;
+            inputArray[i + 2] = grayScaleValue;
+        }
+    };
     var applySobel = function (inputArray, i, width) {
         var nh = [inputArray[i - width - 4] || 0,
             inputArray[i - width] || 0,
@@ -405,10 +413,10 @@ ol.control.Convolve = function (opt_options) {
             inputArray[i + width - 4] || 0,
             inputArray[i + width] || 0,
             inputArray[i + width + 4] || 0];
-        var pixelValue = (nh[0] + 2 * nh[1] + nh[2] - nh[6] - 2 * nh[7] - nh[8]) + (nh[2] + 2 * nh[5] + nh[8] - nh[6] - 2 * nh[3] - nh[0]);
-        pixelValue = pixelValue < 256 ? Math.abs(pixelValue) : 255;
-        pixelValue = 255 - pixelValue;
-        return pixelValue;
+        var hFilter = nh[0] + 2 * nh[1] + nh[2] - nh[6] - 2 * nh[7] - nh[8];
+        var vFilter = nh[2] + 2 * nh[5] + nh[8] - nh[6] - 2 * nh[3] - nh[0];
+        var pixelValue = Math.round(Math.sqrt(Math.pow(hFilter, 2) + Math.pow(vFilter, 2)));
+        return 255 - pixelValue;
     };
     controlButton.addEventListener('click', function (evt) {
         var layer = _this.getMap().getLayers().item(0);
@@ -419,17 +427,20 @@ ol.control.Convolve = function (opt_options) {
                 operation: function (image, data) {
                     var imageData = image[0];
                     var inputArray = imageData.data;
-                    var outputArray = new Uint8ClampedArray(imageData.data);
-                    for (var i = 0; i < inputArray.length; i += 4) {
-                        outputArray[i] = calculateValue(inputArray, i, imageData.width * 4);
-                        outputArray[i + 1] = calculateValue(inputArray, i + 1, imageData.width * 4);
-                        outputArray[i + 2] = calculateValue(inputArray, i + 2, imageData.width * 4);
-                        
+                    var grayScaleArray = new Uint8ClampedArray(inputArray);
+                    toGrayScale(grayScaleArray);
+                    var outputArray = new Uint8ClampedArray(grayScaleArray);
+                    for (var i = 0; i < grayScaleArray.length; i += 4) {
+                        var edgeValue = calculateValue(grayScaleArray, i, imageData.width * 4);
+                        outputArray[i] = edgeValue;
+                        outputArray[i + 1] = edgeValue;
+                        outputArray[i + 2] = edgeValue;
                     }
                     return new ImageData(outputArray, imageData.width, imageData.height);
                 },
                 lib: {
-                    calculateValue: applySobel
+                    calculateValue: applySobel,
+                    toGrayScale: toGrayScale
                 }
             });
             _this.getMap().addLayer(new ol.layer.Image({

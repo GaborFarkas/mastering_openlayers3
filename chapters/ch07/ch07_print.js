@@ -394,7 +394,7 @@ ol.control.Print = function (opt_options) {
     controlDiv.className = options.class || 'ol-print ol-unselectable ol-control';
     var controlButton = document.createElement('button');
     controlButton.textContent = options.label || 'P';
-    controlButton.title = options.tipLabel || 'Print Map';
+    controlButton.title = options.tipLabel || 'Print map';
     var dataURL;
     controlButton.addEventListener('click', function (evt) {
         _this.getMap().once('postcompose', function (evt) {
