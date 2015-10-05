@@ -403,20 +403,33 @@ ol.control.Convolve = function (opt_options) {
             inputArray[i + 2] = grayScaleValue;
         }
     };
-    var applySobel = function (inputArray, i, width) {
-        var nh = [inputArray[i - width - 4] || 0,
-            inputArray[i - width] || 0,
-            inputArray[i - width + 4] || 0,
-            inputArray[i - 4] || 0,
-            inputArray[i],
-            inputArray[i + 4] || 0,
-            inputArray[i + width - 4] || 0,
-            inputArray[i + width] || 0,
-            inputArray[i + width + 4] || 0];
+    var applySobel = function (inputArray, index, width) {
+        var nh = [inputArray[index - width - 4],
+            inputArray[index - width],
+            inputArray[index - width + 4],
+            inputArray[index - 4],
+            inputArray[index],
+            inputArray[index + 4],
+            inputArray[index + width - 4],
+            inputArray[index + width],
+            inputArray[index + width + 4]];
+        for (var i = 0; i < nh.length; i += 1) {
+            if (nh[i] === undefined) {
+                nh[i] = inputArray[index];
+            }
+        }
         var hFilter = nh[0] + 2 * nh[1] + nh[2] - nh[6] - 2 * nh[7] - nh[8];
         var vFilter = nh[2] + 2 * nh[5] + nh[8] - nh[6] - 2 * nh[3] - nh[0];
-        var pixelValue = Math.round(Math.sqrt(Math.pow(hFilter, 2) + Math.pow(vFilter, 2)));
+        var pixelValue = Math.sqrt(Math.pow(hFilter, 2) + Math.pow(vFilter, 2));
         return 255 - pixelValue;
+    };
+    var normalizeImage = function (inputArray, min, max) {
+        for (var i = 0; i < inputArray.length; i+=4) {
+            var newIntensity = (inputArray[i] - min) * 255 / (max - min);
+            inputArray[i] = newIntensity;
+            inputArray[i+1] = newIntensity;
+            inputArray[i+2] = newIntensity;
+        }
     };
     controlButton.addEventListener('click', function (evt) {
         var layer = _this.getMap().getLayers().item(0);
@@ -427,20 +440,24 @@ ol.control.Convolve = function (opt_options) {
                 operation: function (image, data) {
                     var imageData = image[0];
                     var inputArray = imageData.data;
-                    var grayScaleArray = new Uint8ClampedArray(inputArray);
-                    toGrayScale(grayScaleArray);
-                    var outputArray = new Uint8ClampedArray(grayScaleArray);
-                    for (var i = 0; i < grayScaleArray.length; i += 4) {
-                        var edgeValue = calculateValue(grayScaleArray, i, imageData.width * 4);
+                    toGrayScale(inputArray);
+                    var outputArray = new Uint8ClampedArray(inputArray);
+                    var min = Infinity, max = -Infinity;
+                    for (var i = 0; i < inputArray.length; i += 4) {
+                        var edgeValue = calculateValue(inputArray, i, imageData.width * 4, imageData.height);
                         outputArray[i] = edgeValue;
                         outputArray[i + 1] = edgeValue;
                         outputArray[i + 2] = edgeValue;
+                        min = outputArray[i] < min ? outputArray[i] : min;
+                        max = outputArray[i] > max ? outputArray[i] : max;
                     }
+                    normalizeImage(outputArray, min, max);
                     return new ImageData(outputArray, imageData.width, imageData.height);
                 },
                 lib: {
                     calculateValue: applySobel,
-                    toGrayScale: toGrayScale
+                    toGrayScale: toGrayScale,
+                    normalizeImage: normalizeImage
                 }
             });
             _this.getMap().addLayer(new ol.layer.Image({
@@ -459,7 +476,7 @@ ol.inherits(ol.control.Convolve, ol.control.Control);
 
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
-     map = new ol.Map({
+    var map = new ol.Map({
         target: 'map',
         layers: [
             new ol.layer.Tile({

@@ -433,7 +433,7 @@ ol.inherits(ol.control.RasterCalculator, ol.control.Control);
 
 function init() {
     document.removeEventListener('DOMContentLoaded', init);
-     map = new ol.Map({
+    var map = new ol.Map({
         target: 'map',
         layers: [
             new ol.layer.Tile({
