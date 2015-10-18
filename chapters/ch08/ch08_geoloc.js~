@@ -1,0 +1,44 @@
+function init() {
+    document.removeEventListener('DOMContentLoaded', init);
+    var map = new ol.Map({
+        target: 'map',
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            })
+        ],
+        controls: [
+            //Define the default controls
+            new ol.control.Zoom({
+                target: 'toolbar'
+            })
+        ],
+        view: new ol.View({
+            center: [0, 0],
+            zoom: 2
+        })
+    });
+    if (ol.has.TOUCH) {
+        document.getElementById('map').classList.add('ol-touch');
+    }
+    var geoloc = new ol.Geolocation({
+        projection: map.getView().getProjection(),
+        tracking: true
+    });
+    var geoCaching = new ol.layer.Vector({
+        source: new ol.source.Vector(),
+        style: styleFunc
+    });
+    map.addLayer(geoCaching);
+    geoloc.once('change:position', function (evt) {
+        map.getView().setCenter(this.getPosition());
+        map.getView().setZoom(17);
+        var myPos = this.getPosition();
+        for (var i = 0; i < 50; i += 1) {
+            geoCaching.getSource().addFeature(new ol.Feature({
+                geometry: new ol.geom.Point([myPos[0] - 500 + Math.random() * 1000, myPos[1] - 500 + Math.random() * 1000, Math.random() * 300])
+            }));
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', init);
