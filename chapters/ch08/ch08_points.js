@@ -8,7 +8,6 @@ function init() {
             })
         ],
         controls: [
-            //Define the default controls
             new ol.control.Zoom({
                 target: 'toolbar'
             })

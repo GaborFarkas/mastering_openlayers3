@@ -8,7 +8,6 @@ function init() {
             })
         ],
         controls: [
-            //Define the default controls
             new ol.control.Zoom({
                 target: 'toolbar'
             })
@@ -48,7 +47,7 @@ function init() {
             target: 'toolbar'
         }));
         var geolocData = document.createElement('pre');
-        geolocData.className = 'ol-geoloc ol-unselectabble ol-control';
+        geolocData.className = 'ol-geoloc ol-unselectable ol-control';
         geoloc.on('change', function (evt) {
             var dataString = 'Position: ' + this.getPosition() + '\nError: ' + this.getAccuracy() + 'm\nAltitude: ' + this.getAltitude() + 'm\nAltitude error: ' + this.getAltitudeAccuracy() + 'm';
             geolocData.textContent = dataString.replace(/undefined/g, 'N/A');

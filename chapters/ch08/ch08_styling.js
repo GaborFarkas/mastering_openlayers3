@@ -8,7 +8,6 @@ function init() {
             })
         ],
         controls: [
-            //Define the default controls
             new ol.control.Zoom({
                 target: 'toolbar'
             })
@@ -48,7 +47,27 @@ function init() {
             target: 'toolbar'
         }));
         var geolocData = document.createElement('pre');
-        geolocData.className = 'ol-geoloc ol-unselectabble ol-control';
+        geolocData.className = 'ol-geoloc ol-unselectable ol-control';
+        var positionLyr = new ol.layer.Vector({
+            source: new ol.source.Vector(),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    fill: new ol.style.Fill({
+                        color: [255, 255, 255, 1]
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: [0, 0, 0, 1],
+                        width: 2
+                    }),
+                    radius: 6
+                }),
+                stroke: new ol.style.Stroke({
+                    color: [255, 0, 0, 1],
+                    width: 2
+                })
+            })
+        });
+        map.addLayer(positionLyr);
         geoloc.on('change', function (evt) {
             var dataString = 'Position: ' + this.getPosition() + '\nError: ' + this.getAccuracy() + 'm\nAltitude: ' + this.getAltitude() + 'm\nAltitude error: ' + this.getAltitudeAccuracy() + 'm';
             geolocData.textContent = dataString.replace(/undefined/g, 'N/A');
@@ -67,42 +86,15 @@ function init() {
         map.addControl(new ol.control.Control({
             element: geolocData
         }));
-        var positionLyr = new ol.layer.Vector({
-            source: new ol.source.Vector(),
-            style: function (feature, res) {
-                if (feature.getGeometry().getType() === 'Circle') {
-                    return [new ol.style.Style({
-                        stroke: new ol.style.Stroke({
-                            color: [255, 0, 0, 1],
-                            width: 2
-                        })
-                    })];
-                } else {
-                    return [new ol.style.Style({
-                        image: new ol.style.Circle({
-                            fill: new ol.style.Fill({
-                                color: [255, 255, 255, 1]
-                            }),
-                            stroke: new ol.style.Stroke({
-                                color: [0, 0, 0, 1],
-                                width: 2
-                            }),
-                            radius: 6
-                        })
-                    })]
-                }
-            }
-        });
-        map.addLayer(positionLyr);
         geoCaching.setStyle(function (feature, res) {
-            if (geoloc.getAltitude()) {
-                var altitude = geoloc.getAltitude();
+            if (evt.target.getAltitude()) {
+                var altitude = evt.target.getAltitude();
                 var zCoord = feature.getGeometry().getCoordinates()[2];
                 var shapePts, shapeColor, shapeAngle;
                 if (Math.abs(altitude - zCoord) < 1) {
                     shapePts = 4;
                     shapeColor = [255, 255, 0, 1];
-                    shapeAngle = Math.PI / 2;
+                    shapeAngle = Math.PI / 4;
                 } else if (zCoord < altitude) {
                     shapePts = 3;
                     shapeColor = [0, 255, 0, 1];
