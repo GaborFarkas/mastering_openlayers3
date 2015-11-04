@@ -7,7 +7,10 @@ same server as the Javascript.  This has several problems: it's less
 efficient, it might break some sites, and it's a security risk because
 people can use this proxy to browse the web and possibly do bad stuff
 with it.  It only loads pages via http and https, but it can load any
-content type. It supports GET and POST requests."""
+content type. It supports GET and POST requests.
+
+Copyright 2011 OpenLayers Contributors
+Adapted by Gabor Farkas"""
 
 import urllib2
 import cgi
@@ -25,10 +28,10 @@ if method == "POST":
 else:
     fs = cgi.FieldStorage()
     url = os.environ["QUERY_STRING"]
+    url = urllib2.unquote(url)
 
-try: 
+try:
     if url.startswith("http://") or url.startswith("https://"):
-    
         if method == "POST":
             length = int(os.environ["CONTENT_LENGTH"])
             headers = {"Content-Type": os.environ["CONTENT_TYPE"]}
@@ -37,7 +40,6 @@ try:
             y = urllib2.urlopen(r)
         else:
             y = urllib2.urlopen(url)
-        
         # print content type header
         i = y.info()
         if i.has_key("Content-Type"):
@@ -45,15 +47,12 @@ try:
         else:
             print "Content-Type: text/plain"
         print
-        
         print y.read()
-        
         y.close()
     else:
         print "Content-Type: text/plain"
         print
         print "Illegal request."
-
 except Exception, E:
     print "Status: 500 Unexpected Error"
     print "Content-Type: text/plain"
