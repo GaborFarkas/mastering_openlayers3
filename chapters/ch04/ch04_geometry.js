@@ -589,8 +589,8 @@ function init() {
     map.getLayers().item(1).getSource().on('change', function (evt) {
         if (this.getState() === 'ready') {
             map.getLayers().item(1).buildHeaders();
-            var geoJSONParser = new ol.format.GeoJSON();
-            var featString = geoJSONParser.writeFeatures(this.getFeatures());
+            var geoJSONSerializer = new ol.format.GeoJSON();
+            var featString = geoJSONSerializer.writeFeatures(this.getFeatures());
             var request = new XMLHttpRequest();
             request.open('POST', 'myserver/myscript');
             request.send(featString);
@@ -609,8 +609,8 @@ function init() {
                 });
                 modifiedFeatures.push(modifiedFeature);
             }
-            var WFSTParser = new ol.format.WFS();
-            var featObject = WFSTParser.writeTransaction(null, modifiedFeatures, null, {
+            var WFSTSerializer = new ol.format.WFS();
+            var featObject = WFSTSerializer.writeTransaction(null, modifiedFeatures, null, {
                 featureType: 'ne:countries',
                 featureNS: 'http://naturalearthdata.com',
                 srsName: 'EPSG:4326'
