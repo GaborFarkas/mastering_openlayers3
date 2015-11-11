@@ -305,34 +305,29 @@ layerTree.prototype.addWfsLayer = function (form) {
 layerTree.prototype.addVectorLayer = function (form) {
     var file = form.file.files[0];
     var currentProj = this.map.getView().getProjection();
-    try {
-        var fr = new FileReader();
-        var sourceFormat = new ol.format.GeoJSON();
-        var source = new ol.source.Vector();
-        fr.onload = function (evt) {
-            var vectorData = evt.target.result;
-            var dataProjection = form.projection.value || sourceFormat.readProjection(vectorData) || currentProj;
-            shp(vectorData).then(function (geojson) {
-                source.addFeatures(sourceFormat.readFeatures(geojson, {
-                    dataProjection: dataProjection,
-                    featureProjection: currentProj
-                }));
-            });
-        };
-        fr.readAsArrayBuffer(file);
-        var layer = new ol.layer.Vector({
-            source: source,
-            name: form.displayname.value,
-            strategy: ol.loadingstrategy.bbox
+    var fr = new FileReader();
+    var sourceFormat = new ol.format.GeoJSON();
+    var source = new ol.source.Vector();
+    fr.onload = function (evt) {
+        var vectorData = evt.target.result;
+        var dataProjection = form.projection.value || sourceFormat.readProjection(vectorData) || currentProj;
+        shp(vectorData).then(function (geojson) {
+            source.addFeatures(sourceFormat.readFeatures(geojson, {
+                dataProjection: dataProjection,
+                featureProjection: currentProj
+            }));
         });
-        this.addBufferIcon(layer);
-        this.map.addLayer(layer);
-        this.messages.textContent = 'Vector layer added successfully.';
-        return this;
-    } catch (error) {
-        this.messages.textContent = 'Some unexpected error occurred: (' + error.message + ').';
-        return error;
-    }
+    };
+    fr.readAsArrayBuffer(file);
+    var layer = new ol.layer.Vector({
+        source: source,
+        name: form.displayname.value,
+        strategy: ol.loadingstrategy.bbox
+    });
+    this.addBufferIcon(layer);
+    this.map.addLayer(layer);
+    this.messages.textContent = 'Vector layer added successfully.';
+    return this;
 };
 
 layerTree.prototype.addSelectEvent = function (node, isChild) {

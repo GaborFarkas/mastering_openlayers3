@@ -238,9 +238,8 @@ layerTree.prototype.checkWmsLayer = function (form) {
         }
     };
     url = /\?/.test(url) ? url + '&' : url + '?';
-    url = url + 'REQUEST=GetCapabilities&SERVICE=WMS';
-    request.open('GET', '../../../cgi-bin/proxy.py?' + encodeURIComponent(url), true);
-    //request.open('GET', url, true);
+    request.open('GET', '../../../cgi-bin/proxy.py?' + url + 'REQUEST=GetCapabilities&SERVICE=WMS', true);
+    //request.open('GET', url + 'REQUEST=GetCapabilities&SERVICE=WMS', true);
     request.send();
 };
 
@@ -289,9 +288,8 @@ layerTree.prototype.addWfsLayer = function (form) {
             }));
         }
     };
-    url = url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj;
-    request.open('GET', '../../../cgi-bin/proxy.py?' + encodeURIComponent(url));
-    //request.open('GET', url);
+    request.open('GET', '../../../cgi-bin/proxy.py?' + url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj);
+    //request.open('GET', url + 'SERVICE=WFS&REQUEST=GetFeature&TYPENAME=' + typeName + '&VERSION=1.1.0&SRSNAME=' + proj);
     request.send();
     var layer = new ol.layer.Vector({
         source: source,
@@ -395,14 +393,24 @@ ol.control.Cesium = function (opt_options) {
     var _this = this;
     var controlDiv = document.createElement('div');
     controlDiv.className = options.class || 'ol-cesium ol-unselectable ol-control';
+    setTimeout(function () {
+        var ol3d = new olcs.OLCesium({map: _this.getMap()});
+        var scene = ol3d.getCesiumScene();
+        scene.terrainProvider = new Cesium.CesiumTerrainProvider({
+            url: 'http://assets.agi.com/stk-terrain/world'
+        });
+        _this.set('cesium', ol3d);
+    }, 0);
     var controlButton = document.createElement('button');
     controlButton.textContent = '3D';
     controlButton.title = 'Toggle 3D rendering';
     controlButton.addEventListener('click', function (evt) {
-        var cesium = _this.getMap().get('cesium');
+        var cesium = _this.get('cesium');
         if (cesium.getEnabled()) {
+            cesium.setBlockCesiumRendering(true);
             cesium.setEnabled(false);
         } else {
+            cesium.setBlockCesiumRendering(false);
             cesium.setEnabled(true);
         }
     });
@@ -439,6 +447,23 @@ function init() {
                     url: '../../res/rivers.topojson'
                 }),
                 name: 'Rivers'
+            }),
+            new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    format: new ol.format.GeoJSON({
+                        defaultDataProjection: 'EPSG:4326'
+                    }),
+                    url: '../../res/world_capitals.geojson'
+                }),
+                name: 'World Capitals',
+                style: new ol.style.Style({
+                    image: new ol.style.Icon({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        src: '../../res/marker.png'
+                    })
+                })
             })
         ],
         controls: [
@@ -467,14 +492,8 @@ function init() {
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
         .createRegistry(map.getLayers().item(0))
         .createRegistry(map.getLayers().item(1))
-        .createRegistry(map.getLayers().item(2));
-
-    var ol3d = new olcs.OLCesium({map: map});
-    var scene = ol3d.getCesiumScene();
-    scene.terrainProvider = new Cesium.CesiumTerrainProvider({
-        url: '//assets.agi.com/stk-terrain/world'
-    });
-    map.set('cesium', ol3d);
+        .createRegistry(map.getLayers().item(2))
+        .createRegistry(map.getLayers().item(3));
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);
