@@ -397,8 +397,25 @@ ol.control.Cesium = function (opt_options) {
         var ol3d = new olcs.OLCesium({map: _this.getMap()});
         var scene = ol3d.getCesiumScene();
         scene.terrainProvider = new Cesium.CesiumTerrainProvider({
-            url: 'http://assets.agi.com/stk-terrain/world'
+            url: 'http://assets.agi.com/stk-terrain/world',
+            requestWaterMask: true,
+            requestVertexNormals: true
         });
+        scene.skyBox = new Cesium.SkyBox({
+            sources: {
+                positiveX: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_px.jpg'),
+                negativeX: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mx.jpg'),
+                positiveY: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_py.jpg'),
+                negativeY: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_my.jpg'),
+                positiveZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_pz.jpg'),
+                negativeZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mz.jpg')
+            }
+        });
+        scene.moon = new Cesium.Moon({
+            onlySunLighting: false
+        });
+        scene.sun = new Cesium.Sun();
+        scene.globe.enableLighting = true;
         _this.set('cesium', ol3d);
     }, 0);
     var controlButton = document.createElement('button');
@@ -433,6 +450,22 @@ function init() {
                 }),
                 name: 'MapQuest'
             }),
+            new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'http://tileserver.maptiler.com/grandcanyon/{z}/{x}/{y}.png'
+                }),
+                name: 'Grand Canyon'
+            }),
+            new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    format: new ol.format.TopoJSON({
+                        defaultDataProjection: 'EPSG:4326'
+                    }),
+                    url: '../../res/rivers.topojson'
+                }),
+                name: 'Rivers',
+                altitudeMode: 'clampToGround'
+            }),
             new ol.layer.Vector({
                 source: new ol.source.Vector({
                     format: new ol.format.GeoJSON({
@@ -443,9 +476,9 @@ function init() {
                 name: 'World Capitals',
                 style: new ol.style.Style({
                     image: new ol.style.Icon({
-                        /*anchor: [0.5, 46],
+                        anchor: [0.5, 46],
                         anchorXUnits: 'fraction',
-                        anchorYUnits: 'pixels',*/
+                        anchorYUnits: 'pixels',
                         src: '../../res/marker.png'
                     })
                 })
@@ -470,13 +503,15 @@ function init() {
             })
         ],
         view: new ol.View({
-            center: [0, 0],
-            zoom: 2
+            center: [-12488000, 4308000],
+            zoom: 12
         })
     });
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
         .createRegistry(map.getLayers().item(0))
-        .createRegistry(map.getLayers().item(1));
+        .createRegistry(map.getLayers().item(1))
+        .createRegistry(map.getLayers().item(2))
+        .createRegistry(map.getLayers().item(3));
 
     document.getElementById('checkwmslayer').addEventListener('click', function () {
         tree.checkWmsLayer(this.form);
