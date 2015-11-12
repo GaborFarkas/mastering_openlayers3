@@ -9,6 +9,9 @@ body {
 .ol-control button {
     background-color: rgba(219,63,63,.5);
 }
+.ol-control button:focus {
+    background-color: rgba(219,63,63,.5);
+}
 .ol-control button:hover {
     background-color: rgba(219,63,63,1);
 }

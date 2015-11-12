@@ -667,14 +667,7 @@ toolBar.prototype.addSelectControls = function () {
         className: 'ol-singleselect ol-unselectable ol-control',
         interaction: selectInteraction
     });
-    var boxInteraction = new ol.interaction.DragBox({
-        style: new ol.style.Style({
-            stroke: new ol.style.Stroke({
-                color: '#000000',
-                width: 2
-            })
-        })
-    });
+    var boxInteraction = new ol.interaction.DragBox();
     var selectMulti = new ol.control.Interaction({
         label: ' ',
         tipLabel: 'Select features with a box',

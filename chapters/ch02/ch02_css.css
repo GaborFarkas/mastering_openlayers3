@@ -9,6 +9,9 @@ body {
 .ol-control button {
     background-color: rgba(219,63,63,.5);
 }
+.ol-control button:focus {
+    background-color: rgba(219,63,63,.5);
+}
 .ol-control button:hover {
     background-color: rgba(219,63,63,1);
 }
@@ -20,6 +23,11 @@ body {
 }
 .ol-mouse-position {
     font-family: monospace;
+}
+.ol-dragzoom {
+    background-color: rgba(219,63,63,.1);
+    border-width: 2px;
+    border-color: rgba(219,63,63,1);
 }
 .ol-attribution ul {
     background-image: url(../../res/university_of_pecs_transparent.png);
