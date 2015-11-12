@@ -446,7 +446,8 @@ function init() {
                     }),
                     url: '../../res/rivers.topojson'
                 }),
-                name: 'Rivers'
+                name: 'Rivers',
+                altitudeMode: 'clampToGround'
             }),
             new ol.layer.Vector({
                 source: new ol.source.Vector({
@@ -458,9 +459,9 @@ function init() {
                 name: 'World Capitals',
                 style: new ol.style.Style({
                     image: new ol.style.Icon({
-                        /*anchor: [0.5, 46],
+                        anchor: [0.5, 46],
                         anchorXUnits: 'fraction',
-                        anchorYUnits: 'pixels',*/
+                        anchorYUnits: 'pixels',
                         src: '../../res/marker.png'
                     })
                 })
@@ -485,8 +486,8 @@ function init() {
             })
         ],
         view: new ol.View({
-            center: [0, 0],
-            zoom: 2
+            center: [-12488000, 4308000],
+            zoom: 12
         })
     });
     var tree = new layerTree({map: map, target: 'layertree', messages: 'messageBar'})
