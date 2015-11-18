@@ -1,0 +1,72 @@
+body {
+    margin: 0px;
+}
+.map {
+    width: 100%;
+    height: 100%; /*Fallback*/
+    height: 100vh;
+}
+.toolbar {
+    height: 2em;
+    padding: .2em;
+    position: absolute;
+    z-index: 999;
+}
+.toolbar .ol-control {
+    position: static;
+    display: inline-block;
+    padding: 0;
+}
+.toolbar .ol-control {
+    background-color: rgba(0,0,0,0);
+}
+.toolbar .ol-control button {
+    border-radius: 2px;
+    width: 2em;
+    background-color: rgba(219,63,63,.5);
+    display: inline-block;
+}
+.toolbar .ol-control button:hover {
+    background-color: rgba(219,63,63,1);
+}
+.ol-touch .toolbar .ol-control button {
+    background-color: rgba(219,63,63,0.5);
+}
+.ol-touch .toolbar .ol-control button:hover {
+    background-color: rgba(219,63,63,0.5);
+}
+@media only screen and (orientation: portrait) {
+    .ol-touch .toolbar {
+        height: 2rem;
+    }
+    .ol-touch .toolbar .ol-control {
+        height: 2rem;
+    }
+    .ol-touch .toolbar .ol-control button {
+        width: 3rem;
+        height: 2rem;
+    }
+    .ol-geoloc {
+        bottom: 0;
+        right: .5em;
+        white-space: pre-wrap;
+    }
+}
+@media only screen and (orientation: landscape) {
+    .ol-touch .toolbar {
+        width: 2rem;
+    }
+    .ol-touch .toolbar .ol-control {
+        display: block;
+        width: 2rem;
+    }
+    .ol-touch .toolbar .ol-control button {
+        height: 3rem;
+        width: 2rem;
+    }
+    .ol-geoloc {
+        top: 0;
+        right: .5em;
+    }
+}
+

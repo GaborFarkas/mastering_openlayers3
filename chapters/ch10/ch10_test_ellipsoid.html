@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="author" content="Gabor Farkas" >
+        <title>Chapter 10 - Measuring on an Ellipsoid with a Custom Build</title>
+        <link href="../../js/ol3-3.11.0/ol.css" rel="stylesheet">
+        <link href="ch10_test_ellipsoid" rel="stylesheet">
+        <script type="text/javascript" src="ol_ellipsoid.js"></script>
+        <script type="text/javascript" src="ch10_test_ellipsoid.js"></script>
+    </head>
+    <body>
+        <div class="map-container">
+            <div id="toolbar" class="toolbar"></div>
+            <div id="layertree" class="layertree"></div>
+            <div id="map" class="map"></div>
+            <div class="notification-bar">
+                <div id="messageBar" class="message-bar"></div>
+                <div id="coordinates"></div>
+            </div>
+        </div>
+        <div id="addwms" class="toggleable" style="display: none;">
+            <form id="addwms_form" class="addlayer">
+                <p>Add WMS layer</p>
+                <table>
+                    <tr>
+                        <td>Server URL:</td>
+                        <td><input id="wmsurl" name="server" type="text" required="required" value="http://demo.opengeo.org/geoserver/wms"></td>
+                        <td><input id="checkwmslayer" name="check" type="button" value="Check for layers"></td>
+                    </tr>
+                    <tr>
+                        <td>Layer name:</td>
+                        <td><select name="layer" required="required"></select></td>
+                    </tr>
+                    <tr>
+                        <td>Display name:</td>
+                        <td><input name="displayname" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td>Format:</td>
+                        <td><select name="format" required="required"></select></td>
+                    </tr>
+                    <tr>
+                        <td>Tiled:</td>
+                        <td><input type="checkbox" name="tiled"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="submit" value="Add layer"></td>
+                        <td><input type="button" value="Cancel" onclick="this.form.parentNode.style.display = 'none'"></td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        <div id="addwfs" class="toggleable" style="display: none;">
+            <form id="addwfs_form" class="addlayer">
+                <p>Add WFS layer</p>
+                <table>
+                    <tr>
+                        <td>Server URL:</td>
+                        <td><input name="server" type="text" required="required" value="http://demo.mapserver.org/cgi-bin/wfs"></td>
+                    </tr>
+                    <tr>
+                        <td>Layer name:</td>
+                        <td><input name="layer" type="text" required="required" value="cities"></td>
+                    </tr>
+                    <tr>
+                        <td>Display name:</td>
+                        <td><input name="displayname" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td>Projection:</td>
+                        <td><input name="projection" type="text" value="EPSG:4326"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="submit" value="Add layer"></td>
+                        <td><input type="button" value="Cancel" onclick="this.form.parentNode.style.display = 'none'"></td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        <div id="addvector" class="toggleable" style="display: none;">
+            <form id="addvector_form" class="addlayer">
+                <p>Add Vector layer</p>
+                <table>
+                    <tr>
+                        <td>Vector file:</td>
+                        <td><input name="file" type="file" required="required"></td>
+                    </tr>
+                    <tr>
+                        <td>Display name:</td>
+                        <td><input name="displayname" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td>Format:</td>
+                        <td><select name="format" required="required">
+                            <option value="geojson">GeoJSON</option>
+                            <option value="topojson">TopoJSON</option>
+                            <option value="kml">KML</option>
+                            <option value="osm">OSM</option>
+                        </select></td>
+                    </tr>
+                    <tr>
+                        <td>Projection:</td>
+                        <td><input name="projection" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="submit" value="Add layer"></td>
+                        <td><input type="button" value="Cancel" onclick="this.form.parentNode.style.display = 'none'"></td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        <div id="newvector" class="toggleable" style="display: none;">
+            <form id="newvector_form" class="addlayer">
+                <p>New Vector layer</p>
+                <table>
+                    <tr>
+                        <td>Display name:</td>
+                        <td><input name="displayname" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td>Type:</td>
+                        <td><select name="type" required="required">
+                            <option value="point">Point</option>
+                            <option value="line">Line</option>
+                            <option value="polygon">Polygon</option>
+                            <option value="geomcollection">Geometry Collection</option>
+                        </select></td>
+                    </tr>
+                    <tr>
+                        <td><input type="submit" value="Add layer"></td>
+                        <td><input type="button" value="Cancel" onclick="this.form.parentNode.style.display = 'none'"></td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </body>
+</html>
