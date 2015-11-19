@@ -7,11 +7,9 @@ Written by: Gábor Farkas
 
 - `/chapters`   HTML, CSS, and JavaScript code for the examples provided by the book. There is one .html, one .css, and one .js file for each full example. There are also partial examples, which should be linked to the appropriate full example before using.
 
-- `/img`    Thumbnail images for custom controls.
-
 - `/js`    OpenLayers 3, and other compressed third party libraries needed for the examples.
 
-- `/res`    Various resources (mainly vector files) used in the book.
+- `/res`    Various resources (mainly vector files, and thumbnail images for custom controls) used in the book.
 
 - `/src`    OpenLayers 3 source files needed to build custom libraries.
 
