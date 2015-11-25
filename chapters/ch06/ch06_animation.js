@@ -1171,7 +1171,7 @@ ol.inherits(ol.control.ZoomTo, ol.control.Control);
 toolBar.prototype.addExtentControls = function () {
     var _this = this;
     var zoomFull = new ol.control.ZoomToExtent({
-        label: '',
+        label: ' ',
         tipLabel: 'Zoom to full extent'
     });
     var zoomToLayer = new ol.control.ZoomTo({
@@ -1310,7 +1310,7 @@ ol.control.RocketFlight = function () {
     var controlDiv = document.createElement('div');
     controlDiv.className = 'ol-rocket ol-unselectable ol-control';
     var controlButton = document.createElement('button');
-    controlButton.title = 'Fly to me';
+    controlButton.title = 'Launch me';
     controlButton.addEventListener('click', function () {
         var view = _this.getMap().getView();
         _this.getMap().beforeRender(

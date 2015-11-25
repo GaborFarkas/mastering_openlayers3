@@ -1171,7 +1171,7 @@ ol.inherits(ol.control.ZoomTo, ol.control.Control);
 toolBar.prototype.addExtentControls = function () {
     var _this = this;
     var zoomFull = new ol.control.ZoomToExtent({
-        label: '',
+        label: ' ',
         tipLabel: 'Zoom to full extent'
     });
     var zoomToLayer = new ol.control.ZoomTo({
