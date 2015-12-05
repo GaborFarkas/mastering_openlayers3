@@ -87,8 +87,8 @@ function init() {
             element: geolocData
         }));
         geoCaching.setStyle(function (feature, res) {
-            if (evt.target.getAltitude()) {
-                var altitude = evt.target.getAltitude();
+            if (geoloc.getAltitude()) {
+                var altitude = geoloc.getAltitude();
                 var zCoord = feature.getGeometry().getCoordinates()[2];
                 var shapePts, shapeColor, shapeAngle;
                 if (Math.abs(altitude - zCoord) < 1) {

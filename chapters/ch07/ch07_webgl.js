@@ -429,8 +429,8 @@ function init() {
             })
         ],
         view: new ol.View({
-            center: [0, 0],
-            zoom: 2
+            center: [910000, 5900000],
+            zoom: 9
         }),
         renderer: 'webgl'
     });
