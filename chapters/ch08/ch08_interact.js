@@ -113,7 +113,7 @@ function init() {
                 if (Math.abs(altitude - zCoord) < 1) {
                     shapePts = 4;
                     shapeColor = [255, 255, 0, 1];
-                    shapeAngle = Math.PI / 2;
+                    shapeAngle = Math.PI / 4;
                 } else if (zCoord < altitude) {
                     shapePts = 3;
                     shapeColor = [0, 255, 0, 1];
