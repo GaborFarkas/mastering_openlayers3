@@ -172,7 +172,6 @@ var layerTree = function (options) {
             this.removeRegistry(evt.element);
             this.selectEventEmitter.changed();
         }, this);
-        return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
     }
@@ -555,7 +554,6 @@ var toolBar = function (options) {
         this.toolbar = document.getElementById(options.target);
         this.layertree = options.layertree;
         this.controls = new ol.Collection();
-        return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
     }

@@ -32,7 +32,6 @@ var layerTree = function(options) {
             this.layerContainer.insertBefore(layerDiv, this.layerContainer.firstChild);
             return this;
         };
-        return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
     }

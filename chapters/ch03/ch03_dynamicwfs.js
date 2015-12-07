@@ -41,7 +41,6 @@ var layerTree = function (options) {
                 this.createRegistry(evt.element);
             }
         }, this);
-        return this;
     } else {
         throw new Error('Invalid parameter(s) provided.');
     }
