@@ -536,13 +536,5 @@ function init() {
         this.parentNode.style.display = 'none';
     });
 
-    jsts.io.olParser.prototype.convertToMultiPolygon = function(multiPolygon) {
-        var i;
-        var polygons = [];
-        for (i = 0; i < multiPolygon.geometries.length; i++) {
-    	    polygons.push(this.convertToPolygon(multiPolygon.geometries[i]).getCoordinates());
-        }
-        return new ol.geom.MultiPolygon(polygons);
-    };
 }
 document.addEventListener('DOMContentLoaded', init);
