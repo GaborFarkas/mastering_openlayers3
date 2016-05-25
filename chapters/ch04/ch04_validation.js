@@ -405,18 +405,20 @@ layerTree.prototype.stopPropagationOnEvent = function (node, event) {
 };
 
 ol.layer.Vector.prototype.buildHeaders = function () {
-    var headers = this.get('headers') || {};
+    var oldHeaders = this.get('headers') || {};
+    var headers = {};
     var features = this.getSource().getFeatures();
     for (var i = 0; i < features.length; i += 1) {
         var attributes = features[i].getProperties();
         for (var j in attributes) {
-            if (typeof attributes[j] !== 'object' && !(j in headers)) {
+            if (typeof attributes[j] !== 'object' && !(j in oldHeaders)) {
                 headers[j] = 'string';
+            } else if (j in oldHeaders) {
+                headers[j] = oldHeaders[j];
             }
         }
     }
     this.set('headers', headers);
-    this.dispatchEvent('change:headers');
     return this;
 };
 
