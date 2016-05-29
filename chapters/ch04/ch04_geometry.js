@@ -537,7 +537,8 @@ layerTree.prototype.styleCategorized = function (layer, attribute) {
 };
 
 layerTree.prototype.randomHexColor = function() {
-    return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    var num = Math.floor(Math.random() * 16777215).toString(16);
+    return '#' + String.prototype.repeat.call('0', 6 - num.length) + num;
 };
 
 function init() {
