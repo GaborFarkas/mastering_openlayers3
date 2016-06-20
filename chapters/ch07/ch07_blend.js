@@ -353,8 +353,7 @@ layerTree.prototype.addVectorLayer = function (form) {
         fr.readAsText(file);
         var layer = new ol.layer.Vector({
             source: source,
-            name: form.displayname.value,
-            strategy: ol.loadingstrategy.bbox
+            name: form.displayname.value
         });
         this.addBufferIcon(layer);
         this.map.addLayer(layer);

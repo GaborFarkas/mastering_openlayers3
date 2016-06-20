@@ -16,3 +16,7 @@ Written by: Gábor Farkas
 - `/README.md`    This readme file.
 
 - `/proxy.py`    Proxy file for overriding CORS restrictions. Copy it in your web server's `cgi-bin` folder. Note: this proxy does not contain any security restrictions. Be sure, no one can exploit it, use it for testing purposes only, and use it on your own risk. Adapted from: https://trac.osgeo.org/openlayers/browser/trunk/openlayers/examples/proxy.cgi.
+
+## Errata:
+
+- On page 54, it is said, strategies affect the rendering process. Contrary, strategies affect the download process of WFSs, or other REST API based layers. They alter the [extent](https://github.com/openlayers/ol3/blob/v3.16.0/src/ol/source/vectorsource.js#L792) with which the [loader function](https://github.com/openlayers/ol3/blob/v3.16.0/src/ol/featureloader.js#L31) is called. Thus, setting a strategy only has effect, when it is used with the default loader function (`ol.featureloader.loadFeaturesXhr`).
